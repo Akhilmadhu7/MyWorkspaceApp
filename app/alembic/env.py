@@ -1,6 +1,7 @@
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
+from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
@@ -22,7 +23,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", app_config.database_url)
+config.set_main_option("sqlalchemy.url", app_config.database_url.replace("+asyncpg",""))
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -42,7 +43,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option("sqlalchemy.url",app_config.database_url)
     context.configure(
         url=url,
         target_metadata=target_metadata,
