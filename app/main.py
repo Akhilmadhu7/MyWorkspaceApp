@@ -6,12 +6,17 @@ from routers import router
 from config.config import config
 import contextlib
 from cache.cache import redis_cache_manager_instance
+import sys
 
 
 @contextlib.asynccontextmanager
 async def life_span(app:FastAPI):
     print("Application starting up")
-    await db_manager.connect_to_db()
+    try:
+        await db_manager.connect_to_db()
+    except Exception as error:
+        print(f"Failed to connect with database. Error occurred is: {error}")
+        sys.exit(1)
     redis_cache_manager_instance.connect()
     yield
     print("cleangin up engines")
