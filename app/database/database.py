@@ -97,7 +97,7 @@ class DatabaseConnectionManager:
 db_manager:DatabaseConnectionManager = DatabaseConnectionManager()
 
 
-async def get_db(request:Request|None, db_url:str|None):
+async def get_db(request:Request, db_url:str = None):
     if not (request or db_url):
         raise ValueError(f"Either request object or db_url type of str expected, but got None.")
     database_url:str = db_url or getattr(request.state, 'db_url', None) if request else None
