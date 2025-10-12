@@ -33,9 +33,8 @@ class Logger:
         
         return self.logger
 
-logger:Logger = Logger().get_logger()
-    
-    
+logger:logging.Logger = Logger().get_logger()
+
 
 
 

@@ -53,7 +53,8 @@ class TenantService:
                     "date_of_birth":payload.get("date_of_birth",None),
                     "password":password,
                     "username":user_email,
-                    "user_id":user_id
+                    "user_id":user_id,
+                    "is_active":True
                 }
                 await self.user_repo.create_user(user_payload)
                 await self.tenant_repo.db.commit()

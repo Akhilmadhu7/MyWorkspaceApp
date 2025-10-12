@@ -1,1 +1,2 @@
 from .tenantVerificationMiddlewares import TenantVerificationMiddleware
+from .jwt_verification_middleware import JwtVerificationMiddleware

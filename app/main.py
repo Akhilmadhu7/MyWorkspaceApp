@@ -6,7 +6,7 @@ from routers import router
 from config.config import config
 import contextlib
 from cache.cache import redis_cache_manager_instance
-from middleware import TenantVerificationMiddleware
+from middleware import TenantVerificationMiddleware, JwtVerificationMiddleware
 from logger import logger
 import sys
 
@@ -39,9 +39,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
-# app.add_middleware(TenantVerificationMiddleware)
+app.add_middleware(JwtVerificationMiddleware)
 
 app.include_router(router)

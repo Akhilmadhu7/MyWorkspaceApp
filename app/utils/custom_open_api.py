@@ -14,6 +14,10 @@ def custom_openapi(app):
     )
 
     openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+        },
         "TenantId": {
             "type":"apiKey",
             "name":"X-Tenant-Id",
@@ -21,7 +25,7 @@ def custom_openapi(app):
         }
     }
 
-    openapi_schema["security"] = [{"TenantId": []}]
+    openapi_schema["security"] = [{"BearerAuth": [],"TenantId": []}]
 
     # Explicitly set the servers field with the required base path
     openapi_schema["servers"] = [
