@@ -7,18 +7,20 @@ from config.config import config
 import contextlib
 from cache.cache import redis_cache_manager_instance
 from middleware import TenantVerificationMiddleware
+from logger import logger
 import sys
-
 
 @contextlib.asynccontextmanager
 async def life_span(app:FastAPI):
     print("Application starting up")
     try:
         await db_manager.connect_to_db()
+        logger.info("Successfully connected to databse.")
     except Exception as error:
-        print(f"Failed to connect with database. Error occurred is: {error}")
+        logger.error(f"Failed to connect with database. Error occured is: {error}")
         sys.exit(1)
     redis_cache_manager_instance.connect()
+    logger.info("Successfully connected to redis.")
     yield
     print("cleangin up engines")
     await db_manager.clean_up_engines()
