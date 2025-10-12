@@ -1,3 +1,3 @@
-from .roles import role_repository, RoleRepository
-from .tenants import tenant_repository, TenantRepository
-from .users import user_repository, UserRepository
+from .roles import RoleRepository
+from .tenants import TenantRepository
+from .users import UserRepository

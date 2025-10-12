@@ -6,6 +6,7 @@ from routers import router
 from config.config import config
 import contextlib
 from cache.cache import redis_cache_manager_instance
+from middleware import TenantVerificationMiddleware
 import sys
 
 
@@ -39,5 +40,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# app.add_middleware(TenantVerificationMiddleware)
 
 app.include_router(router)

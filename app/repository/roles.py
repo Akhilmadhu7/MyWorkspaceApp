@@ -7,19 +7,20 @@ from uuid import UUID
 
 class RoleRepository:
 
+    def __init__(self, db:AsyncSession):
+        self.db = db
 
-    async def get_owner_role(self, db:AsyncSession) -> Role:
+    async def get_owner_role(self) -> Role:
         query = select(Role).where(Role.role_name=='Owner')
-        result = await db.execute(query)
+        result = await self.db.execute(query)
         data = result.scalar_one_or_none()
         if not data:
             raise ValueError("should create a new owner role.")
         return data
 
-    @classmethod
-    async def get_owner_by_role_id(db:AsyncSession, role_id:UUID) -> Role:
+    async def get_owner_by_role_id(self, role_id:UUID) -> Role:
         query = select(Role).where(Role.role_id == role_id)
-        result = await db.execute(query)
+        result = await self.db.execute(query)
         data = result.scalar_one_or_none()
         if not data:
             raise HTTPException(
@@ -27,6 +28,3 @@ class RoleRepository:
                 detail="Role not found."
             )
         return data
-
-
-role_repository:RoleRepository = RoleRepository()

@@ -1,1 +1,3 @@
-from .tenants import tenant_service
+from .tenants import TenantService
+from .users import UserService
+from .auth import AuthenticationService

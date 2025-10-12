@@ -13,24 +13,15 @@ def custom_openapi(app):
         routes=app.routes,
     )
 
-    # openapi_schema["components"]["securitySchemes"] = {
-    #     "BearerAuth": {
-    #         "type": "http",
-    #         "scheme": "bearer",
-    #     },
-    #     "CrossToken": {
-    #         "type": "apiKey",
-    #         "name": "X-Cross-Token",
-    #         "in": "header",
-    #     },
-    #     "TenantId": {
-    #         "type":"apiKey",
-    #         "name":"X-Tenant-Id",
-    #         "in":"header"
-    #     }
-    # }
+    openapi_schema["components"]["securitySchemes"] = {
+        "TenantId": {
+            "type":"apiKey",
+            "name":"X-Tenant-Id",
+            "in":"header"
+        }
+    }
 
-    # openapi_schema["security"] = [{"BearerAuth": [], "CrossToken": [], "TenantId": []}]
+    openapi_schema["security"] = [{"TenantId": []}]
 
     # Explicitly set the servers field with the required base path
     openapi_schema["servers"] = [

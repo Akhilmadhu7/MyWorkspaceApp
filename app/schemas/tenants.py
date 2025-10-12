@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from uuid import UUID
 from datetime import datetime,date
 from typing import Optional
@@ -23,6 +23,8 @@ class TenantResponse(BaseModel):
     timezone:str
     created_at:datetime
     updated_at:datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 

@@ -24,7 +24,7 @@ class RedisCache:
     
     def connect(self)-> None:
         try:
-            self.redis = redis.Redis(self.host, self.port, self.db, self.username, self.password, **self.kwargs)
+            self.redis = redis.Redis(self.host, self.port, self.db, self.username, self.password,decode_responses=True, **self.kwargs)
             self.redis.ping()
         except redis.AuthenticationError as e:
             raise e
@@ -42,6 +42,9 @@ class RedisCache:
 
 
 redis_cache_manager_instance:RedisCache = RedisCache(config.redis_host, config.redis_port)
+def get_redis():
+    return redis_cache_manager_instance.get_redis_instance()
+
 
 
 

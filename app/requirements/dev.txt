@@ -8,6 +8,7 @@ pydantic-settings==2.6.1
 
 # Requests
 httpx==0.28.0
+passlib[bcrypt]
 pyjwt==2.6.0
 pytz
 
