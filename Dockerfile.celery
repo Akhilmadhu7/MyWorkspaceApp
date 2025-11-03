@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir -r requirements/dev.txt
 
 COPY ./app .
 
-CMD ["sh", "-c", "celery -A config.celery.celery_app worker --loglevel=info --queues=boiler_plate_queue"]
+CMD ["sh", "-c", "celery -A config.celery.celery_app worker --queues=notification_queue"]

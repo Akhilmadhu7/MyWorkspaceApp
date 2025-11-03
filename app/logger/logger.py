@@ -1,6 +1,7 @@
 import logging
 from config.config import config
 
+
 class Logger:
 
     _instance = None

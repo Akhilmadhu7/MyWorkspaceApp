@@ -3,7 +3,10 @@ from schemas.tenants import TenantCreateSchema
 from uuid import uuid4, UUID
 import secrets, string
 from repository import TenantRepository, UserRepository, RoleRepository
-from helpers import generate_password
+from helpers import generate_password, hash_password
+from src.tasks.send_notifications import send_notification
+from logger import logger
+from config.config import config
 
 
 class TenantService:
@@ -36,7 +39,9 @@ class TenantService:
         }
         #create tenant.
         try:
+            logger.info("before getting db session")
             async with self.tenant_repo.db.begin():
+                logger.info("After getting db sesssion.")
                 tenant = await self.tenant_repo.create_tenant(tenant_payload)
                 owner_role = await self.role_repo.get_owner_role()
                 user_id:UUID = uuid4()
@@ -51,15 +56,25 @@ class TenantService:
                     "role_id":owner_role.role_id,
                     "designation":payload.get("designation",None),
                     "date_of_birth":payload.get("date_of_birth",None),
-                    "password":password,
+                    "password":hash_password(password),
                     "username":user_email,
                     "user_id":user_id,
                     "is_active":True
                 }
                 await self.user_repo.create_user(user_payload)
                 await self.tenant_repo.db.commit()
+                logger.info("Successfully created tenant.")
+                send_notification.apply_async(
+                    kwargs={
+                        'reciever_email': user_email,
+                        'message': f'login credentials. username: {user_email} and password: {password}',
+                        'subject': 'test'
+                    }
+                )
+                             
                 return True
         except Exception as error:
+            logger.error(f"Error from tenant creation is: {error}.")
             await self.tenant_repo.db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

@@ -19,9 +19,10 @@ def get_user_service(user_repo:UserRepository = Depends(get_user_repo)) -> UserS
 
 def get_tenant_service(
         tenant_repo:TenantRepository  = Depends(get_tenant_repo),
-        user_repo:UserRepository = Depends(get_user_repo)
+        user_repo:UserRepository = Depends(get_user_repo),
+        role_repo:RoleRepository = Depends(get_role_repo)
     ) -> TenantService:
-    return TenantService(tenant_repo=tenant_repo, user_repo=user_repo)
+    return TenantService(tenant_repo=tenant_repo, user_repo=user_repo, role_repo=role_repo)
 
 def get_auth_service(user_repo:UserRepository = Depends(get_user_repo)) -> AuthenticationService:
     return AuthenticationService(user_repo=user_repo)

@@ -37,6 +37,9 @@ class Config(BaseSettings):
     access_token_expire_minutes:int = 5
     refresh_token_expire_minutes:int = 10
 
+    EMAIL_USERNAME:str
+    EMAIL_PASSWORD:str
+
     @property
     def database_url(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
@@ -48,8 +51,7 @@ class Config(BaseSettings):
     @property
     def celery_broker_url(self):
         return (
-            f"amqp://{self.rabbitmq_user}:{self.rabbitmq_password}"
-            f"@{self.rabbitmq_host}:{self.rabbitmq_port}//"
+            f"amqp://{self.rabbitmq_user}:{self.rabbitmq_password}@{self.rabbitmq_host}:{self.rabbitmq_port}//"
         )
     
     model_config = SettingsConfigDict(

@@ -40,5 +40,5 @@ def generate_password(tenant_uuid: UUID, user_uuid: UUID) -> str:
     # Combine all and shuffle
     password_chars = list(uppercase + digit + special) + remaining_chars
     random.shuffle(password_chars)
-    return hash_password("".join(password_chars))
+    return "".join(password_chars)
 
