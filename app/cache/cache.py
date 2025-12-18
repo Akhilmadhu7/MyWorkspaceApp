@@ -1,20 +1,16 @@
 import redis
 from config.config import config
 
+import logging
+logger = logging.getLogger(__name__)
 
 
-
-class RedisCache:
+class RedisCache(redis.Redis):
 
     _instance = None
 
     def __init__(self, host:str, port:str, username:str=None, password:str=None, db:str = 0, **kwargs):
-        self.host = host
-        self.password = password
-        self.username = username
-        self.port = port
-        self.db = db
-        self.kwargs = kwargs
+        self.redis = redis.Redis(host=host, port=port, password=password,username=username, db=db, **kwargs)
         
 
     def __new__(cls,*args, **kwargs):
@@ -24,20 +20,23 @@ class RedisCache:
     
     def connect(self)-> None:
         try:
-            self.redis = redis.Redis(self.host, self.port, self.db, self.username, self.password,decode_responses=True, **self.kwargs)
             self.redis.ping()
+            logger.info("Successfully connected to redis.")
         except redis.AuthenticationError as e:
+            logger.error(f"Authentication error while connecting to redis: {e}")
             raise e
         except redis.ConnectionError as e:
+            logger.error(f"Connection error while connecting to redis: {e}")
             raise e
         except Exception as e:
+            logger.error(f"An exception occurred while connecting to redis: {e}")
             raise e
     
     def get_redis_instance(self) -> redis.Redis:
         return self.redis
     
     def close(self):
-        return redis.Redis.close()
+        return self.redis.close()
 
 
 

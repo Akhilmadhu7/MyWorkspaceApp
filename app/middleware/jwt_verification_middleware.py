@@ -17,7 +17,7 @@ class JwtVerificationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         
         # Exclude `/docs` and `/redoc` endpoints
-        if request.url.path.endswith(("/docs", "/redoc", "/openapi.json", "/health", "/login", "create-tenant")):
+        if request.url.path.endswith(("/docs","/redoc", "/openapi.json", "/health/", "/login", "create-tenant")):
             return await call_next(request)
         
         authorization_header:str = request.headers.get("Authorization", None)

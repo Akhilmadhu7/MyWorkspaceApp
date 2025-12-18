@@ -20,7 +20,7 @@ class Config(BaseSettings):
     # max_open_connections:int
     # max_idle_connections:int
     # connection_max_life_time:int
-    # connection_max_idle_time:int
+# connection_max_idle_time:int
 
     redis_host:str 
     redis_port:str
