@@ -45,7 +45,7 @@ class User(Base):
         onupdate=lambda: datetime.now(timezone.utc),
         server_default=func.now()
     )
-    soft_teleted_at = Column(
+    soft_deleted_at = Column(
         DateTime(timezone=True),
         nullable=True
     )

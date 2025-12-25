@@ -1,12 +1,11 @@
 from fastapi import HTTPException, status, Request
-from schemas.tenants import TenantCreateSchema
+from api.v1.schemas import TenantCreateSchema
 from uuid import uuid4, UUID
 import secrets, string
 from repository import TenantRepository, UserRepository, RoleRepository
 from helpers import generate_password, hash_password
 from src.tasks.send_notifications import send_notification
 from logger import logger
-from config.config import config
 
 
 class TenantService:

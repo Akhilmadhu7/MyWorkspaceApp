@@ -18,13 +18,8 @@ class RoleRepository:
             raise ValueError("should create a new owner role.")
         return data
 
-    async def get_owner_by_role_id(self, role_id:UUID) -> Role:
+    async def get_by_role_id(self, role_id:UUID) -> Role:
         query = select(Role).where(Role.role_id == role_id)
         result = await self.db.execute(query)
         data = result.scalar_one_or_none()
-        if not data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Role not found."
-            )
         return data

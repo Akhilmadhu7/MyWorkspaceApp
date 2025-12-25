@@ -12,6 +12,8 @@ class UserRepository:
     async def create_user(self, payload:dict):
         user = User(**payload)
         self.db.add(user)
+        await self.db.flush()
+        await self.db.refresh(user)
         return user
     
     async def get_user(self, tenant_id:UUID, user_id:UUID):
@@ -22,6 +24,14 @@ class UserRepository:
         result = await self.db.execute(query)
         data = result.scalar_one_or_none()
         return data
+
+    async def get_user_by_email(self, email:str, tenant_id:UUID) -> User:
+        query = select(User).where(
+            User.email==email,
+            User.tenant_id==tenant_id
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
     
     async def get_users(self, tenant_id:UUID, user_filters:dict = {}):
         query = select(User).where(

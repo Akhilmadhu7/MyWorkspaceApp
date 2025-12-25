@@ -15,6 +15,20 @@ class NotFoundException(Exception):
         self.status_code = status_code
         super().__init__(detail, status_code)
 
+class ObjectAlreadyExistsException(Exception):
+
+    def __init__(self, detail:Any, status_code:status = status.HTTP_400_BAD_REQUEST) -> None:
+        self.status_code = status_code
+        self.detail = detail
+        super().__init__(detail, status_code)
+    
+class TimeOutException(Exception):
+
+    def __init__(self, detail:Any, status_code:status = status.HTTP_400_BAD_REQUEST) -> None:
+        self.status_code = status_code
+        self.detail = detail
+        super().__init__(detail, status_code)
+
 
 
 

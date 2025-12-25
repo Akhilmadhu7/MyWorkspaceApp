@@ -34,8 +34,13 @@ class Config(BaseSettings):
 
     jwt_algo:str
     jwt_secret_key:str
-    access_token_expire_minutes:int = 5
-    refresh_token_expire_minutes:int = 10
+    access_token_expire_minutes:int = 100
+    refresh_token_expire_minutes:int = 100
+
+    invitation_token_expire_in_minutes:int = 10080
+    forgot_password_token_expire_in_minutes:int = 60
+
+    domain:str = Field(default="http://localhost:8000")
 
     EMAIL_USERNAME:str
     EMAIL_PASSWORD:str

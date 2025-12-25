@@ -17,7 +17,7 @@ class JwtVerificationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         
         # Exclude `/docs` and `/redoc` endpoints
-        if request.url.path.endswith(("/docs","/redoc", "/openapi.json", "/health/", "/login", "create-tenant")):
+        if request.url.path.endswith(("/docs","/redoc", "/openapi.json", "/health/", "/login", "create-tenant", "verify-invitation", "create-user")):
             return await call_next(request)
         
         authorization_header:str = request.headers.get("Authorization", None)
@@ -49,9 +49,9 @@ class JwtVerificationMiddleware(BaseHTTPMiddleware):
                     "detail":str(error)
                 }
             )
-        
+    
         request.state.user_id = UUID(data.get('user_id')) if data.get("user_id") else None
-        request.state.tenant_id = UUID(data.get('tenant_id')) if data.get("tenant_id") else None
+        request.state.tenant_id = UUID(data.get('user_tenant_id')) if data.get("user_tenant_id") else None
         request.state.role_id = UUID(data.get('role_id')) if data.get("role_id") else None
         request.state.username = str(data.get('username')) if data.get("username") else None
         request.state.email = str(data.get('email')) if data.get("email") else None

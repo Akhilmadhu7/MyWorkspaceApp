@@ -1,6 +1,6 @@
 from fastapi import Request, status, HTTPException
 from repository import UserRepository
-from schemas import AuthCredential, RefreshToken
+from api.v1.schemas import AuthCredential, RefreshToken
 from helpers import verify_password, create_access_token, create_refresh_token, verify_token
 from config.config import config
 from uuid import UUID
@@ -47,17 +47,19 @@ class AuthenticationService:
             "user_firstname":user.first_name,
             "user_lastname":user.last_name,
             "user_role_id":str(user.role_id),
-            # "user_role_name":user.role.name,
             "user_tenant_id":str(user.tenant_id),
             "email":user.email
         }
         access_token:str = create_access_token(jwt_payload, config.jwt_algo, config.jwt_secret_key, config.access_token_expire_minutes)
         refresh_token:str = create_refresh_token(jwt_payload, config.jwt_algo, config.jwt_secret_key, config.refresh_token_expire_minutes)
-
+        
         return {
             "access_token":access_token,
             "refresh_token":refresh_token,
-            "token_type":'Bearer'
+            "token_type":'Bearer',
+            "tenant_id":user.tenant_id,
+            "user_id":user.user_id,
+            "role":user.role_id
         }
     
     async def verify_refresh_token(self, payload:RefreshToken):
@@ -112,7 +114,10 @@ class AuthenticationService:
         return {
             "access_token":access_token,
             "refresh_token":refresh_token,
-            "token_type":'Bearer'
+            "token_type":'Bearer',
+            "tenant_id":user.tenant_id,
+            "user_id":user.user_id,
+            "role":user.role_id
         }
         
 

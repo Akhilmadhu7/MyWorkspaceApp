@@ -1,6 +1,6 @@
 from fastapi import Request, HTTPException, status, Depends, APIRouter
 from uuid import UUID
-from schemas import BaseResponse
+from ..schemas import BaseResponse
 from dependancies import get_user_service
 from services import UserService
 

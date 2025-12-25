@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Request, Depends
-from schemas.tenants import TenantCreateSchema, TenantResponse
-from schemas.responses import BaseResponse
+from ..schemas import TenantCreateSchema, TenantResponse, BaseResponse
 from uuid import UUID
 from dependancies import get_tenant_service
 from services import TenantService

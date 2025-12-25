@@ -1,9 +1,11 @@
 from pydantic import BaseModel
-from typing import Any,Union
+from typing import Any,Union, TypeVar,Generic
 from .pagination import Pagination
 
-class BaseResponse(BaseModel):
-    data:Any
+T = TypeVar("T")
+
+class BaseResponse(BaseModel, Generic[T]):
+    data:T|None
     message:str
     status:Union[str, int]
     error: str | list[str] | None = None

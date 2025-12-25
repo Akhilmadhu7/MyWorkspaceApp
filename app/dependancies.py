@@ -1,5 +1,5 @@
-from repository import UserRepository, TenantRepository, RoleRepository
-from services import AuthenticationService, UserService, TenantService
+from repository import UserRepository, TenantRepository, RoleRepository, UserInvitationRepository, TokenRepository
+from services import AuthenticationService, UserService, TenantService, UserInvitationService
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.database import get_db
@@ -12,6 +12,12 @@ def get_tenant_repo(db:AsyncSession = Depends(get_db)) -> TenantRepository:
 
 def get_role_repo(db:AsyncSession = Depends(get_db)) -> RoleRepository:
     return RoleRepository(db)
+
+def get_user_invitation_repo(db:AsyncSession = Depends(get_db)) -> UserInvitationRepository:
+    return UserInvitationRepository(db)
+
+def get_token_repo(db:AsyncSession = Depends(get_db)) -> TokenRepository:
+    return TokenRepository(db)
 
 
 def get_user_service(user_repo:UserRepository = Depends(get_user_repo)) -> UserService:
@@ -26,3 +32,11 @@ def get_tenant_service(
 
 def get_auth_service(user_repo:UserRepository = Depends(get_user_repo)) -> AuthenticationService:
     return AuthenticationService(user_repo=user_repo)
+
+def get_user_invitation_service(
+        user_invitation_repo:UserInvitationRepository = Depends(get_user_invitation_repo),
+        role_repo: RoleRepository = Depends(get_role_repo),
+        token_repo:TokenRepository = Depends(get_token_repo),
+        user_repo:UserRepository = Depends(get_user_repo)
+    ) -> UserInvitationService:
+    return UserInvitationService(user_invitation_repo, role_repo, token_repo, user_repo)

@@ -2,7 +2,7 @@ from fastapi import FastAPI, status
 from utils.custom_open_api import custom_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from database.database import db_manager
-from routers import router
+from api import router
 from config.config import config
 import contextlib
 from cache.cache import redis_cache_manager_instance
@@ -47,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(JwtVerificationMiddleware)
+
 
 app.include_router(router)
 global_exception_handlers(app=app)
