@@ -11,8 +11,9 @@ from logger import logger
 from alembic import command
 from alembic.config import Config
 from exception.global_exception_handler import global_exception_handlers
+from clients import create_api_client, close_api_client
 from typing import Any
-import sys,os
+import sys
 
 @contextlib.asynccontextmanager
 async def life_span(app:FastAPI):
@@ -25,10 +26,12 @@ async def life_span(app:FastAPI):
         sys.exit(1)
     redis_cache_manager_instance.connect()
     logger.info("Successfully connected to redis.")
+    create_api_client()
     yield
     print("cleangin up engines")
     await db_manager.clean_up_engines()
     redis_cache_manager_instance.close()
+    close_api_client()
     print("completed cdb clean up")
 
 app = FastAPI(

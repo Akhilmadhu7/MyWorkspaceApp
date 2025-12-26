@@ -3,47 +3,49 @@ import httpx
 import logging
 from json import JSONDecodeError
 from typing import Any, Dict, Optional
+from logger.logger import logger
+from exception import NotFoundException, APIClientException
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
-
-class APIClientError(Exception):
-    """Custom exception for APIClient errors."""
-
-    def __init__(self, message, request=None, response=None):
-        super().__init__(message)
-        self.request = request
-        self.response = response
 
 
 class APIClient:
+
+    _instance:Optional["APIClient"] = None 
+
+    def __new__(cls, *args, **kwargs):
+        
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
     def __init__(
         self,
-        base_url: str,
-        timeout: int = 10,
-        retries: int = 1,
-        auth_token: Optional[str] = None,
-        logger: Optional[logging.Logger] = None,
+        timeout: Optional[int] = 10,
+        max_connections:Optional[int] = 20,
+        max_keepalive_connections:Optional[int] = 40,
+        keepalive_expiry:Optional[float] = 30.0
     ):
-        self.base_url = base_url.rstrip("/")
+        # self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.retries = retries
-        self.auth_token = auth_token
-        self.logger = logger or logging.getLogger(__name__)
+        self.max_connections = max_connections
+        self.max_keepalive_connections = max_keepalive_connections
+        self.keepalive_expiry = keepalive_expiry
+
         # Create an HTTP client with connection pooling
-        self.client = httpx.AsyncClient(timeout=self.timeout)
+        self.client = httpx.AsyncClient(
+            timeout=self.timeout,
+            limits=httpx.Limits(
+                max_connections=self.max_connections,
+                max_keepalive_connections=self.max_keepalive_connections,
+                keepalive_expiry=self.keepalive_expiry
+            )
+        )
 
     def _get_headers(self, headers: Optional[Dict[str, str]] = None) -> Dict[str, str]:
         default_headers = {
             "Content-Type": "application/json",
         }
-        if self.auth_token:
-            default_headers["Authorization"] = f"Bearer {self.auth_token}"
 
         if headers:
             default_headers.update(headers)
@@ -53,21 +55,21 @@ class APIClient:
     async def _make_request(
         self,
         method: str,
-        endpoint: str,
+        url: str,
+        auth_token:Optional[str] = None,
         params: Optional[Dict[str, Any]] = None,
         data: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
+        retries:Optional[int] = 3
     ) -> Any:
-        url = (
-            f"{self.base_url}/{endpoint.lstrip('/')}"
-            if endpoint
-            else f"{self.base_url}"
-        )
+        
         headers = self._get_headers(headers)
+        if auth_token:
+            headers["Authorization"] = f"Bearer {auth_token}"
 
-        for attempt in range(1, self.retries + 1):
+        for attempt in range(1, retries + 1):
             try:
-                self.logger.info(
+                logger.info(
                     f"{method} {url} (attempt {attempt}) with payload: {data}"
                 )
                 if method == "GET":
@@ -85,75 +87,108 @@ class APIClient:
                 else:
                     raise ValueError(f"Unsupported HTTP method: {method}")
 
-                self.logger.info(f"Response received: {response.status_code}")
+                logger.info(f"Response received: {response.status_code}")
+                logger.info(f"Respnose dir: {response.__dict__}")
                 return response.raise_for_status().json()
             except httpx.ConnectError as e:
-                self.logger.error(f"Connection error on attempt {attempt}: {e}")
+                logger.error(f"Connection error on attempt {attempt}: {e}")
             except httpx.ReadTimeout as e:
-                self.logger.error(f"Timeout on attempt {attempt}: {e}")
+                logger.error(f"Timeout on attempt {attempt}: {e}")
             except httpx.RequestError as e:
-                self.logger.error(f"Request error on attempt {attempt}: {e}")
+                logger.error(f"Request error on attempt {attempt}: {e}")
             except JSONDecodeError as e:
-                raise APIClientError("Error while decoding response as JSON") from e
+                raise APIClientException("Error while decoding response as JSON") from e
             except httpx.HTTPStatusError as e:
-                self.logger.error(
+                logger.error(
                     f"HTTP error on attempt {attempt}: {e.response.status_code} {e.response.text}"
                 )
-                raise APIClientError(str(e), e.request, e.response) from e
+                raise APIClientException(str(e), e.request, e.response) from e
 
             backoff_time = 2 ** (attempt - 1)
-            self.logger.info(f"Retrying in {backoff_time} seconds...")
+            logger.info(f"Retrying in {backoff_time} seconds...")
             await asyncio.sleep(backoff_time)
 
-        raise APIClientError(
+        raise APIClientException(
             f"Failed to complete {method} request to {url} after {self.retries} attempts."
         )
 
     async def get(
         self,
-        endpoint: str,
+        url: str,
+        auth_token:Optional[str] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
+        retries:Optional[int] = 3
     ) -> Any:
-        return await self._make_request("GET", endpoint, params=params, headers=headers)
+        return await self._make_request("GET", url, params=params, auth_token=auth_token,retries=retries, headers=headers)
 
     async def put(
         self,
-        endpoint: str,
+        url: str,
         data: Dict[str, Any],
+        auth_token:Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
+        retries:Optional[int] = 3
     ) -> Any:
-        return await self._make_request("PUT", endpoint, data=data, headers=headers)
+        return await self._make_request("PUT", url, data=data,auth_token=auth_token,retries=retries, headers=headers)
 
     async def post(
         self,
-        endpoint: str,
+        url: str,
         data: Dict[str, Any],
+        auth_token:Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
+        retries:Optional[int] = 3
     ) -> Any:
-        return await self._make_request("POST", endpoint, data=data, headers=headers)
+        return await self._make_request("POST", url, data=data, headers=headers, auth_token=auth_token,retries=retries)
 
     async def delete(
-        self, endpoint: str, headers: Optional[Dict[str, str]] = None
+        self, 
+        url: str,
+        auth_token:Optional[str] = None,
+        headers: Optional[Dict[str, str]] = None,
+        retries:Optional[int] = 3
+
     ) -> Any:
-        return await self._make_request("DELETE", endpoint, headers=headers)
+        return await self._make_request("DELETE", url, headers=headers, auth_token=auth_token,retries=retries)
 
     async def patch(
         self,
-        endpoint: str,
+        url: str,
         data: Dict[str, Any],
+        auth_token:Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
+        retries:Optional[int] = 3
     ) -> Any:
-        return await self._make_request("PATCH", endpoint, data=data, headers=headers)
+        return await self._make_request("PATCH", url,auth_token=auth_token,retries=retries, data=data, headers=headers)
 
     async def close(self):
         """Close the HTTP client."""
-        await self.client.aclose()
+        logger.info(f"Closing {self.client._limits.max_connections} connections...")
+        if self.client:
+            await self.client.aclose()
+            self.client = None
+            logger.info("Successfully closed api client connection.")
 
-    async def __aenter__(self):
-        """Called when entering the 'async with' block."""
-        return self
+api_client:Optional[APIClient] = None
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Called when exiting the 'async with' block."""
-        await self.close()
+def create_api_client() -> APIClient :
+    global api_client
+    if api_client is None:
+        api_client = APIClient(
+            timeout=15,
+            max_connections=20,
+            max_keepalive_connections=40,
+            keepalive_expiry=30.0
+        )
+    logger.info(f"Successfully created api client: {api_client}")
+    return api_client
+
+
+async def close_api_client() -> None:
+    global api_client
+    if api_client:
+        await api_client.close()
+        api_client = None
+        logger.info("Successfully closed api client connection.")
+
