@@ -23,3 +23,5 @@ class RoleRepository:
         result = await self.db.execute(query)
         data = result.scalar_one_or_none()
         return data
+
+    

@@ -3,6 +3,7 @@ from typing import Dict, Optional
 from fastapi import Request
 from sqlalchemy import text
 from config.config import config
+from contextlib import asynccontextmanager
 
 class DatabaseConnectionManager:
 
@@ -97,20 +98,12 @@ class DatabaseConnectionManager:
 db_manager:DatabaseConnectionManager = DatabaseConnectionManager()
 
 
-async def get_db(request:Request, db_url:str = None):
-    if not (request or db_url):
-        raise ValueError(f"Either request object or db_url type of str expected, but got None.")
-    database_url:str = db_url or getattr(request.state, 'db_url', None) if request else None
-    async_session = (
-        db_manager.get_async_session(database_url) if database_url else db_manager.get_default_async_session
-    )
-    print(f"get db function async session is {async_session}")
+async def get_db():
+    async_session = db_manager.get_default_async_session
     async with async_session() as session:
+        print("yielding session for the request.")
         try:
             yield session
-        except Exception as error:
-            print("async session error: ", error)
-            raise error
         finally:
             await session.close()
 

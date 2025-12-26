@@ -12,10 +12,11 @@ class JwtVerificationMiddleware(BaseHTTPMiddleware):
         super().__init__(app=app)
 
     async def dispatch(self, request:Request, call_next):
+    
         # Immediately return for OPTIONS requests
         if request.method == "OPTIONS":
             return await call_next(request)
-        
+
         # Exclude `/docs` and `/redoc` endpoints
         if request.url.path.endswith(("/docs","/redoc", "/openapi.json", "/health/", "/login", "create-tenant", "verify-invitation", "create-user")):
             return await call_next(request)

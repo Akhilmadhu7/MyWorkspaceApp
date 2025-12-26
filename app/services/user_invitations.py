@@ -1,5 +1,5 @@
 from repository import UserInvitationRepository, RoleRepository, TokenRepository, UserRepository
-from database.models import UserInvitation, Token, User
+from database.models import UserInvitation, Token, User, Role
 from uuid import UUID
 from api.v1.schemas import (
     UserInvitationRequest,
@@ -16,6 +16,7 @@ from config.config import config
 from logger.logger import logger
 from src.tasks import send_notification
 from helpers import hash_password
+from typing import Optional
 import secrets
 
 
@@ -50,7 +51,7 @@ class UserInvitationService:
                 detail="User has already been invited."
             )
         
-        role = await self.role_repo.get_by_role_id(user_invitation_payload['user_invitation_role'])
+        role:Optional[Role] = await self.role_repo.get_by_role_id(user_invitation_payload['user_invitation_role'])
         if not role:
             logger.error(f"user invitation role not found: {user_invitation_payload['user_invitation_role']}")
             raise NotFoundException(
@@ -64,10 +65,10 @@ class UserInvitationService:
         user_invitation_payload['updated_by'] = user_id
 
         invitation_token_expire_in_minutes:int = config.invitation_token_expire_in_minutes
-        invitation_token_expires_at = datetime.now(timezone.utc) + timedelta(minutes=invitation_token_expire_in_minutes)
+        invitation_token_expires_at:datetime = datetime.now(timezone.utc) + timedelta(minutes=invitation_token_expire_in_minutes)
 
         try:
-            user_invitation_obj = await self.user_invitation_repo.create(user_invitation_payload)
+            user_invitation_obj:UserInvitation = await self.user_invitation_repo.create(user_invitation_payload)
             token_paylod:dict = {
                 "token":secrets.token_urlsafe(120),
                 "token_tenant_id":tenant_id,
@@ -105,7 +106,7 @@ class UserInvitationService:
         user_invitation_id:str = payload.get("user_invitation_id")
 
         
-        token:Token = await self.token_repo.get_by_token(token_str, TokenTypeEnum.INVITATION.value)
+        token:Optional[Token] = await self.token_repo.get_by_token(token_str, TokenTypeEnum.INVITATION.value)
         if not token:
             logger.error(f"Token doesn't exist for the user invitation id: {user_invitation_id}.")
             raise NotFoundException("Invalid token.")
@@ -114,7 +115,7 @@ class UserInvitationService:
         if current_time_in_utc > token.expires_at:
             logger.error(f"Token has been expired for the user invitation: {user_invitation_id}")
             raise TimeOutException("Token has expired.")
-        user_invitation_obj:UserInvitation = await self.user_invitation_repo.get_by_id(user_invitation_id)
+        user_invitation_obj:Optional[UserInvitation] = await self.user_invitation_repo.get_by_id(user_invitation_id)
         if not user_invitation_obj:
             logger.error(f"User invitation doesn't exist for the user_invitation_id: {user_invitation_id}.")
             raise NotFoundException("User invitation not found.")
@@ -130,7 +131,7 @@ class UserInvitationService:
         user_invitation_id:str = payload.get("user_invitation_id")
         user_invitation_token:str = payload.get("user_invitation_token")
         logger.info(f"User otken: {user_invitation_token}")
-        token:Token = await self.token_repo.get_by_token(user_invitation_token,TokenTypeEnum.INVITATION.value)
+        token:Optional[Token] = await self.token_repo.get_by_token(user_invitation_token,TokenTypeEnum.INVITATION.value)
         if not token:
             logger.error(f"Token doesn't exist for the user invitation id: {user_invitation_id}")
             raise NotFoundException("Invalid token.")
@@ -141,7 +142,7 @@ class UserInvitationService:
             logger.error(f"Token has been expired. Token expired at: {token.expires_at} and current time: {current_date_in_utc}.")
             raise TimeOutException("Token has been expired.")
 
-        user_invitation_obj:UserInvitation = await self.user_invitation_repo.get_by_id(user_invitation_id)
+        user_invitation_obj:Optional[UserInvitation] = await self.user_invitation_repo.get_by_id(user_invitation_id)
         if not user_invitation_obj:
             logger.error(f"User invitation doesn't exist for the user_invitaiton id: {user_invitation_id}.")
             raise NotFoundException("User invitation not found.")
@@ -156,7 +157,7 @@ class UserInvitationService:
             logger.error("User password confirmation failed.")
             raise CustomException("Password confirmation failed.")
         
-        existing_user:User = await self.user_repo.get_user_by_email(user_invitation_obj.user_invitation_email, user_invitation_obj.user_invitation_tenant_id)
+        existing_user:Optional[User] = await self.user_repo.get_user_by_email(user_invitation_obj.user_invitation_email, user_invitation_obj.user_invitation_tenant_id)
         if existing_user:
             logger.error(f"An user already existing with email: {existing_user.email}. Raising error becuase of an user exists with requested user invitation id: {user_invitation_id}.")
             raise ObjectAlreadyExistsException("An user already exists with the email.")

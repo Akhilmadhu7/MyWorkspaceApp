@@ -47,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(JwtVerificationMiddleware)
+# app.add_middleware(TenantVerificationMiddleware)
 
 
 app.include_router(router)

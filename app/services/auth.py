@@ -1,8 +1,10 @@
 from fastapi import Request, status, HTTPException
 from repository import UserRepository
 from api.v1.schemas import AuthCredential, RefreshToken
+from database.models import User
 from helpers import verify_password, create_access_token, create_refresh_token, verify_token
 from config.config import config
+from typing import Optional
 from uuid import UUID
 
 
@@ -17,7 +19,7 @@ class AuthenticationService:
         username:str = payload.get("username")
         unhashed_password:str = payload.get("password")
 
-        user = await self.user_repo.check_username(username)
+        user:Optional[User] = await self.user_repo.check_username(username)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -33,8 +35,9 @@ class AuthenticationService:
         update_user_payload:dict = {
             "is_authenticated":True
         }
+
         try:
-            await self.user_repo.update_user(user.user_id, user.tenant_id, update_user_payload)
+            await self.user_repo.update_user(user, user.tenant_id, update_user_payload)
         except Exception as error:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
