@@ -45,8 +45,6 @@ def get_redis():
     return redis_cache_manager_instance.get_redis_instance()
 
 
-
-
     
 
     

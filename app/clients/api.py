@@ -88,8 +88,10 @@ class APIClient:
                     raise ValueError(f"Unsupported HTTP method: {method}")
 
                 logger.info(f"Response received: {response.status_code}")
-                logger.info(f"Respnose dir: {response.__dict__}")
-                return response.raise_for_status().json()
+                
+                response.raise_for_status()
+                return response.json()
+                
             except httpx.ConnectError as e:
                 logger.error(f"Connection error on attempt {attempt}: {e}")
             except httpx.ReadTimeout as e:
@@ -102,7 +104,7 @@ class APIClient:
                 logger.error(
                     f"HTTP error on attempt {attempt}: {e.response.status_code} {e.response.text}"
                 )
-                raise APIClientException(str(e), e.request, e.response) from e
+                raise APIClientException(str(e)) from e
 
             backoff_time = 2 ** (attempt - 1)
             logger.info(f"Retrying in {backoff_time} seconds...")
@@ -164,7 +166,7 @@ class APIClient:
 
     async def close(self):
         """Close the HTTP client."""
-        logger.info(f"Closing {self.client._limits.max_connections} connections...")
+        logger.info(f"Closing {self.client.limits} connections...")
         if self.client:
             await self.client.aclose()
             self.client = None
@@ -191,4 +193,13 @@ async def close_api_client() -> None:
         await api_client.close()
         api_client = None
         logger.info("Successfully closed api client connection.")
+
+def get_api_client() -> APIClient:
+    global api_client
+    if api_client is None:
+        raise RuntimeError(
+            "APIClient not initialized! Call create_api_client() first "
+            "in lifespan or use dependency injection."
+        )
+    return api_client
 

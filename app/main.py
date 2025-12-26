@@ -17,7 +17,7 @@ import sys
 
 @contextlib.asynccontextmanager
 async def life_span(app:FastAPI):
-    print("Application starting up")
+    logger.info("Application starting up")
     try:
         await db_manager.connect_to_db()
         logger.info("Successfully connected to databse.")
@@ -28,11 +28,11 @@ async def life_span(app:FastAPI):
     logger.info("Successfully connected to redis.")
     create_api_client()
     yield
-    print("cleangin up engines")
+    logger.info("Applicatin shut down started.")
     await db_manager.clean_up_engines()
     redis_cache_manager_instance.close()
-    close_api_client()
-    print("completed cdb clean up")
+    await close_api_client()
+    logger.info("completed shutdown.")
 
 app = FastAPI(
     title='Boiler plate',

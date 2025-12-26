@@ -1,6 +1,12 @@
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
-from exception.exceptions import NotFoundException, CustomException, TimeOutException, ObjectAlreadyExistsException
+from exception.exceptions import (
+    NotFoundException,
+    CustomException,
+    TimeOutException,
+    ObjectAlreadyExistsException,
+    APIClientException
+)
 from typing import Any
 from fastapi import FastAPI
 
@@ -29,6 +35,15 @@ def global_exception_handlers(app: FastAPI) -> None:
     
     @app.exception_handler(TimeOutException)
     async def timeout_exception(request:Request, exc:TimeOutException):
+        detail:Any = exc.detail if exc.detail else UNKNOWN_ERROR
+        status_code:status = exc.status_code if exc.status_code else  status.HTTP_400_BAD_REQUEST
+        return JSONResponse(
+            status_code=status_code,
+            content={"detail":detail}
+        )
+    
+    @app.exception_handler(APIClientException)
+    async def timeout_exception(request:Request, exc:APIClientException):
         detail:Any = exc.detail if exc.detail else UNKNOWN_ERROR
         status_code:status = exc.status_code if exc.status_code else  status.HTTP_400_BAD_REQUEST
         return JSONResponse(
