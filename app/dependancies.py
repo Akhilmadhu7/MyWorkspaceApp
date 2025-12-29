@@ -1,6 +1,7 @@
 from repository import UserRepository, TenantRepository, RoleRepository, UserInvitationRepository, TokenRepository
-from services import AuthenticationService, UserService, TenantService, UserInvitationService
+from services import AuthenticationService, UserService, TenantService, UserInvitationService, ChatService
 from fastapi import Depends
+from websocket_manager import get_websocket_manager, WebSocketConnectionManager
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.database import get_db
 
@@ -40,3 +41,6 @@ def get_user_invitation_service(
         user_repo:UserRepository = Depends(get_user_repo)
     ) -> UserInvitationService:
     return UserInvitationService(user_invitation_repo, role_repo, token_repo, user_repo)
+
+def get_chat_service(websocket_manager:WebSocketConnectionManager = Depends(get_websocket_manager)) -> ChatService:
+    return ChatService(websocket_manager)

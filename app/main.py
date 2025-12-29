@@ -2,7 +2,7 @@ from fastapi import FastAPI, status
 from utils.custom_open_api import custom_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from database.database import db_manager
-from api import router
+from api import router, chat_routers
 from config.config import config
 import contextlib
 from cache.cache import redis_cache_manager_instance
@@ -12,6 +12,7 @@ from alembic import command
 from alembic.config import Config
 from exception.global_exception_handler import global_exception_handlers
 from clients import create_api_client, close_api_client
+from websocket_manager import create_websocket_manager, delete_websocket_manager
 from typing import Any
 import sys
 
@@ -27,11 +28,13 @@ async def life_span(app:FastAPI):
     redis_cache_manager_instance.connect()
     logger.info("Successfully connected to redis.")
     create_api_client()
+    create_websocket_manager()
     yield
     logger.info("Applicatin shut down started.")
     await db_manager.clean_up_engines()
     redis_cache_manager_instance.close()
     await close_api_client()
+    delete_websocket_manager()
     logger.info("completed shutdown.")
 
 app = FastAPI(
@@ -54,4 +57,5 @@ app.add_middleware(JwtVerificationMiddleware)
 
 
 app.include_router(router)
+# app.include_router(chat_routers)
 global_exception_handlers(app=app)

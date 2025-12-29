@@ -12,7 +12,7 @@ class JwtVerificationMiddleware(BaseHTTPMiddleware):
         super().__init__(app=app)
 
     async def dispatch(self, request:Request, call_next):
-    
+        print("request type: ", request.url)
         # Immediately return for OPTIONS requests
         if request.method == "OPTIONS":
             return await call_next(request)

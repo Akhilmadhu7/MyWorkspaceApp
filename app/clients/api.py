@@ -166,40 +166,40 @@ class APIClient:
 
     async def close(self):
         """Close the HTTP client."""
-        logger.info(f"Closing {self.client.limits} connections...")
+        logger.info(f"Closing {self.client} connections...")
         if self.client:
             await self.client.aclose()
             self.client = None
             logger.info("Successfully closed api client connection.")
 
-api_client:Optional[APIClient] = None
+__api_client:Optional[APIClient] = None
 
 def create_api_client() -> APIClient :
-    global api_client
-    if api_client is None:
-        api_client = APIClient(
+    global __api_client
+    if __api_client is None:
+        __api_client = APIClient(
             timeout=15,
             max_connections=20,
             max_keepalive_connections=40,
             keepalive_expiry=30.0
         )
-    logger.info(f"Successfully created api client: {api_client}")
-    return api_client
+    logger.info(f"Successfully created api client: {__api_client}")
+    return None
 
 
 async def close_api_client() -> None:
-    global api_client
-    if api_client:
-        await api_client.close()
-        api_client = None
+    global __api_client
+    if __api_client:
+        await __api_client.close()
+        __api_client = None
         logger.info("Successfully closed api client connection.")
 
 def get_api_client() -> APIClient:
-    global api_client
-    if api_client is None:
+    global __api_client
+    if __api_client is None:
         raise RuntimeError(
             "APIClient not initialized! Call create_api_client() first "
             "in lifespan or use dependency injection."
         )
-    return api_client
+    return __api_client
 

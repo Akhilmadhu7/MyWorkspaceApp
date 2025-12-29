@@ -1,1 +1,1 @@
-from .v1.routers.base import router
+from .v1.routers.base import router, chat_routers

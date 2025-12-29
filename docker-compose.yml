@@ -6,7 +6,7 @@ services:
     volumes:
       - ./app:/app
     ports:
-      - "8003:8003"
+      - "8000:8000"
     environment:
       - APP_NAME=BoilerPlate
       - LOG_LEVEL=DEBUG
