@@ -8,6 +8,7 @@ class WebSocketConnectionManager:
 
     def __init__(self):
         self.active_connections:dict[UUID, WebSocket] = {}
+        self.message_history:dict[UUID, dict] = {}
 
     async def connect(self, websocket:WebSocket, user_id:UUID):
         
@@ -20,8 +21,13 @@ class WebSocketConnectionManager:
         await websocket.accept()
         logger.info(f"Successfully accepted connection for the user_id: {user_id}")
         self.active_connections[user_id] = websocket
+        logger.info(f"message history for the user_id: {user_id} and messages: {self.message_history.get(user_id)}")
+        if user_id in self.message_history and self.message_history[user_id]:
+            logger.info(f"user_id: {user_id} in message history.")
+            await self.broadcast_message(user_id)
 
-    async def close(self, websocket:WebSocket, user_id:UUID):
+
+    async def close(self, user_id:UUID):
         existing_connection = self.active_connections.get(user_id)
         if existing_connection:
             logger.info(f"Connection exists for the user_id: {user_id}. removing connection from the active connections.")
@@ -33,10 +39,21 @@ class WebSocketConnectionManager:
         if client_connection:
             logger.info(f"sending message to the user: {user_id} and message: {message}.")
             await client_connection.send_json(message)
+        elif self.message_history.get(user_id, None):
+            logger.info(f"message history exists for the user_id: {user_id} and updating the user message history.")
+            self.message_history[user_id].update({user_id:message})
+        else:
+            logger.info(f"Message history doesn't exist for the user_id: {user_id}. Adding the message to the user")
+            self.message_history[user_id] = {user_id:message}
         
-    async def broadcast_message(self, message:str):
-        for client_connection in self.active_connections.values():
-            client_connection.send_json(message)
+        
+    async def broadcast_message(self, reciever_id:UUID):
+        reciever_history_messages:dict = self.message_history.get(reciever_id)
+        reciever_connection:WebSocket = self.active_connections.get(reciever_id)
+        logger.info(f"Broadcast messages receiver connection: {reciever_connection}")
+        for sender_id, message in reciever_history_messages.items():
+            logger.info(f"sending messages through broadcast: {message}")
+            await reciever_connection.send_json(message)
 
 websocket_manager:Optional[WebSocketConnectionManager] = None
 

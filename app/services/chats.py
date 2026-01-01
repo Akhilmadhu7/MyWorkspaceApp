@@ -23,7 +23,7 @@ class ChatService:
                 logger.info(f"Message type is: {message_type} ")
                 if message_type.get("type") == "websocket.disconnect":
                     logger.info(f"User: {user_id} disconnecting from the webscoket: {websocket}.")
-                    await self.websocket_manager.close(websocket, user_id)
+                    await self.websocket_manager.close(user_id)
                     break
 
                 data = message_type.get("text", None)
@@ -66,5 +66,5 @@ class ChatService:
                 
         except (WebSocketDisconnect, WebSocketException) as e:
             logger.error(f"error from websocket: {e} and user_id:{user_id} and websocket: {websocket}")
-            await self.websocket_manager.close(websocket, user_id)
+            await self.websocket_manager.close(user_id)
     
