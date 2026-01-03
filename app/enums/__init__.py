@@ -1,1 +1,4 @@
-from .token_enums import TokenTypeEnum
+from .token_enums import (
+    TokenTypeEnum, 
+    EventEnum
+)

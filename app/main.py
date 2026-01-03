@@ -25,14 +25,14 @@ async def life_span(app:FastAPI):
     except Exception as error:
         logger.error(f"Failed to connect with database. Error occured is: {error}")
         sys.exit(1)
-    redis_cache_manager_instance.connect()
+    await redis_cache_manager_instance.connect()
     logger.info("Successfully connected to redis.")
     create_api_client()
-    create_websocket_manager()
+    await create_websocket_manager()
     yield
     logger.info("Applicatin shut down started.")
     await db_manager.clean_up_engines()
-    redis_cache_manager_instance.close()
+    await redis_cache_manager_instance.close()
     await close_api_client()
     delete_websocket_manager()
     logger.info("completed shutdown.")

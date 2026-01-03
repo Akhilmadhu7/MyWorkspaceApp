@@ -24,8 +24,9 @@ class Config(BaseSettings):
 
     redis_host:str 
     redis_port:str
+    redis_password:str
+    redis_db:str
     redis_username:Optional[str] = None
-    redis_password:Optional[str] = None
 
     rabbitmq_host:str
     rabbitmq_port:int

@@ -88,7 +88,7 @@ services:
     image: redis:alpine
     ports:
       - "6380:6379"
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "password"]
     volumes:
       - redis_data:/data
     networks:
@@ -144,3 +144,4 @@ volumes:
   rabbitmq_data:
   rabbitmq_logs:
   elasticsearch-data:  
+

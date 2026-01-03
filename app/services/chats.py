@@ -28,7 +28,7 @@ class ChatService:
 
                 data = message_type.get("text", None)
                 logger.info(f"type of data before checking. {type(data)}.")
-                if not data:
+                if data is None:
                     logger.error(f"No data from the request.")
                     await self.websocket_manager.send_message("no data", user_id)
                     continue
@@ -62,7 +62,7 @@ class ChatService:
                 logger.info(f"Data from websocket: {data} and host: {websocket.client.host}")
                 target_user_id:UUID = validated_data.target_user_id
                 message:str = validated_data.message
-                await self.websocket_manager.send_message(message, target_user_id)
+                await self.websocket_manager.send_message(message, target_user_id, user_id)
                 
         except (WebSocketDisconnect, WebSocketException) as e:
             logger.error(f"error from websocket: {e} and user_id:{user_id} and websocket: {websocket}")
