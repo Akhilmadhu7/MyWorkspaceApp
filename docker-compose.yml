@@ -1,4 +1,11 @@
 services:
+
+  elb:
+    image: haproxy
+    ports:
+        - "8100:8100"
+    volumes:
+        - ./haproxy:/usr/local/etc/haproxy
   api:
     build:
       context: .
@@ -7,6 +14,42 @@ services:
       - ./app:/app
     ports:
       - "8000:8000"
+    environment:
+      - APP_NAME=BoilerPlate
+      - LOG_LEVEL=DEBUG
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - shared-network
+  api-one:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+    ports:
+      - "8001:8000"
+    environment:
+      - APP_NAME=BoilerPlate
+      - LOG_LEVEL=DEBUG
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - shared-network
+  api-two:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+    ports:
+      - "8002:8000"
     environment:
       - APP_NAME=BoilerPlate
       - LOG_LEVEL=DEBUG
