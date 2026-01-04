@@ -3,7 +3,7 @@ from websocket_manager import WebSocketConnectionManager
 from api.v1.schemas import OneToOneChatSchema
 from uuid import UUID
 from pydantic import ValidationError
-from typing import Optional
+from typing import Optional, List
 from logger.logger import logger
 from enums import MessageStatusEnum, MessageTypeEnum
 from database.models import Message
@@ -19,8 +19,25 @@ class ChatService:
 
     
     async def send(self, websocket:WebSocket, user_id:UUID):
-
+        
         await self.websocket_manager.connect(websocket, user_id)
+
+        #after connecting, Messages with status sent exists or not. If it does, then send those messages to users.
+        is_non_delivered_message_exists:bool = await self.message_repo.non_delivered_message_exists(websocket.scope['tenant_id'], user_id)
+        logger.info(f"Non delivered messages exits: {is_non_delivered_message_exists}")
+        if is_non_delivered_message_exists:
+            non_delivered_messages:List[dict] = await self.message_repo.get_messages(
+                websocket.scope['tenant_id'],
+                [MessageStatusEnum.SENT],
+                filters={
+                    "receiver_id":user_id
+                }
+            )
+            message_ids:List[int] = await self.websocket_manager.broadcast_non_delivered_messages(user_id, non_delivered_messages)
+            logger.info(f"Message ids needs to be updated are: {message_ids}")
+            await self.message_repo.bulk_update_status(message_ids, MessageStatusEnum.DELIVERED)
+            logger.info(f"Successfully updated message status to delivered.")
+        
         try:
             while True:
                 logger.info(f"Connceting for the websocket: {websocket} and user_id: {user_id}")

@@ -1,6 +1,6 @@
 from fastapi import WebSocket, WebSocketException, status
 from uuid import UUID
-from typing  import Optional
+from typing  import Optional, List, Dict
 from logger.logger import logger
 from cache import AsyncRedisManager, get_redis
 from datetime import datetime, timezone
@@ -13,7 +13,6 @@ class WebSocketConnectionManager:
     def __init__(self, redis_client:AsyncRedisManager):
         self.redis_client = redis_client
         self.active_connections:dict[UUID, WebSocket] = {}
-        self.message_history:dict[UUID, dict] = {}
         self.channel = lambda user_id : f"user_id: {user_id}"
 
     async def connect(self, websocket:WebSocket, user_id:UUID):
@@ -32,12 +31,6 @@ class WebSocketConnectionManager:
         logger.info(f"Successfully accepted connection for the user_id: {user_id}")
 
         self.active_connections[user_id] = websocket
-        logger.info(f"message history for the user_id: {user_id} and messages: {self.message_history.get(user_id)}")
-
-        #if the user has some pending messages to be delivered, then broadcast all the messages to the user.
-        if user_id in self.message_history and self.message_history[user_id]:
-            logger.info(f"user_id: {user_id} in message history.")
-            await self.broadcast_message(user_id)
         
         #$ubscribe to the user channe.
         asyncio.create_task(self.subscribe_channel(user_id))
@@ -73,8 +66,7 @@ class WebSocketConnectionManager:
                     #get the data and send the message.
                     content:dict = json.loads(message.get("data"))
                     await self.active_connections.get(user_id).send_json(content)
-
-        
+ 
     async def publish_message(self, message:dict, reciever_id:UUID, sender_id:UUID):
         
         #get the connection.
@@ -93,24 +85,23 @@ class WebSocketConnectionManager:
             await self.redis_client.publish(channel, message)
             logger.info(f"Successfully published the message for the reciver_id: {reciever_id} send by user_id: {sender_id}.")
 
-        #if client doesn't exist and has message history, then append the message to the history.
-        elif self.message_history.get(reciever_id, None):
-            logger.info(f"message history exists for the user_id: {reciever_id} and updating the user message history.")
-            self.message_history[reciever_id].update({sender_id:message})
-
-        #if the client doesn't have any messsage, then create the message history.
-        else:
-            logger.info(f"Message history doesn't exist for the user_id: {reciever_id}. Adding the message to the user")
-            self.message_history[reciever_id] = {sender_id:message}
+    
+    async def broadcast_non_delivered_messages(self, receiver_id:UUID, messsages:List[dict]) -> List[int]:
+        receiver_connection:WebSocket = self.active_connections.get(receiver_id)
+        message_ids:List[int] = []
+        for message in messsages:
+            logger.info(f"sending non delivered message to the receiver_id: {receiver_id}")
+            await receiver_connection.send_json(message)
+            message_ids.append(message.get("message_id"))
+        return message_ids
         
-        
-    async def broadcast_message(self, reciever_id:UUID):
-        reciever_history_messages:dict = self.message_history.get(reciever_id)
-        reciever_connection:WebSocket = self.active_connections.get(reciever_id)
-        logger.info(f"Broadcast messages receiver connection: {reciever_connection}")
-        for sender_id, json_content in reciever_history_messages.items():
-            logger.info(f"sending messages through broadcast: {json_content}")
-            await reciever_connection.send_json(json.loads(json_content))       
+    # async def broadcast_message(self, reciever_id:UUID):
+    #     reciever_history_messages:dict = self.message_history.get(reciever_id)
+    #     reciever_connection:WebSocket = self.active_connections.get(reciever_id)
+    #     logger.info(f"Broadcast messages receiver connection: {reciever_connection}")
+    #     for sender_id, json_content in reciever_history_messages.items():
+    #         logger.info(f"sending messages through broadcast: {json_content}")
+    #         await reciever_connection.send_json(json.loads(json_content))       
 
 websocket_manager:Optional[WebSocketConnectionManager] = None
 

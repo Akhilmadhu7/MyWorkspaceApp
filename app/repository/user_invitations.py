@@ -43,7 +43,6 @@ class UserInvitationRepository:
             exists().where(UserInvitation.user_invitation_email==user_email)
         )
         result = await self.db.execute(query)
-        print("result", result)
         return bool(result.scalar())
     
     async def delete(self, user_invitation:"UserInvitation") -> bool:

@@ -42,11 +42,11 @@ class Message(Base):
 
     def to_dict(self) -> dict:
         return {
-            "id": self.message_id,
+            "message_id": self.message_id,
             "sender_id": str(self.sender_id) if self.sender_id else None,
             "receiver_id": str(self.receiver_id) if self.receiver_id else None,
             "message": self.message,
-            "status": self.message_status,
-            "type": self.message_type,
+            "message_status": str(self.message_status.value),
+            "message_type": str(self.message_type.value),
             "created_at": self.created_at.isoformat() if self.created_at else None
         }

@@ -1,7 +1,7 @@
 import enum
 
 class MessageStatusEnum(enum.Enum):
-    SENT = "SEND"
+    SENT = "SENT"
     DELIVERED = "DELIVERED"
     READ = "READ"
 
