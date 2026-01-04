@@ -18,7 +18,7 @@ def create_refresh_token(data:dict, jwt_algo:str, jwt_secret_key:str, time_in_mi
     jwt_token = jwt.encode(jwt_data, jwt_secret_key, jwt_algo)
     return jwt_token
 
-def verify_token(jwt_token:str, jwt_algo:str, jwt_secret_key:str) -> bool:
+def verify_token(jwt_token:str, jwt_algo:str, jwt_secret_key:str) -> dict:
     
     try:
         data = jwt.decode(jwt_token, jwt_secret_key, [jwt_algo])

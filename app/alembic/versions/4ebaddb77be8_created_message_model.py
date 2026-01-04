@@ -23,11 +23,13 @@ def upgrade() -> None:
     op.create_table('messages',
     sa.Column('message_id', sa.BigInteger(), autoincrement=True, nullable=False),
     sa.Column('sender_id', sa.UUID(), nullable=True),
+    sa.Column('tenant_id', sa.UUID(), nullable=True),
     sa.Column('receiver_id', sa.UUID(), nullable=True),
     sa.Column('message', sa.Text(), nullable=False),
     sa.Column('message_status', sa.Enum('SENT', 'DELIVERED', 'READ', name='messagestatusenum'), nullable=False),
     sa.Column('message_type', sa.Enum('TEXT', 'FILE', name='messagetypeenum'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.tenant_id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['receiver_id'], ['users.user_id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['sender_id'], ['users.user_id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('message_id')

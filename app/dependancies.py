@@ -1,5 +1,18 @@
-from repository import UserRepository, TenantRepository, RoleRepository, UserInvitationRepository, TokenRepository
-from services import AuthenticationService, UserService, TenantService, UserInvitationService, ChatService
+from repository import (
+    UserRepository,
+    TenantRepository,
+    RoleRepository,
+    UserInvitationRepository,
+    TokenRepository,
+    MessageRepository
+)
+from services import (
+    AuthenticationService,
+    UserService,
+    TenantService,
+    UserInvitationService,
+    ChatService,
+)
 from fastapi import Depends
 from websocket_manager import get_websocket_manager, WebSocketConnectionManager
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +32,9 @@ def get_user_invitation_repo(db:AsyncSession = Depends(get_db)) -> UserInvitatio
 
 def get_token_repo(db:AsyncSession = Depends(get_db)) -> TokenRepository:
     return TokenRepository(db)
+
+def get_message_repo(db:AsyncSession = Depends(get_db)) -> MessageRepository:
+    return MessageRepository(db)
 
 
 def get_user_service(user_repo:UserRepository = Depends(get_user_repo)) -> UserService:
@@ -42,5 +58,8 @@ def get_user_invitation_service(
     ) -> UserInvitationService:
     return UserInvitationService(user_invitation_repo, role_repo, token_repo, user_repo)
 
-def get_chat_service(websocket_manager:WebSocketConnectionManager = Depends(get_websocket_manager)) -> ChatService:
-    return ChatService(websocket_manager)
+def get_chat_service(
+        message_repo:MessageRepository = Depends(get_message_repo),
+        websocket_manager:WebSocketConnectionManager = Depends(get_websocket_manager)
+    ) -> ChatService:
+    return ChatService(message_repo, websocket_manager)

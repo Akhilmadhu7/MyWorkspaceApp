@@ -6,13 +6,14 @@ from starlette.responses import JSONResponse
 from logger import logger
 from uuid import UUID
 
+
 class JwtVerificationMiddleware(BaseHTTPMiddleware):
 
     def __init__(self,app):
         super().__init__(app=app)
 
     async def dispatch(self, request:Request, call_next):
-        print("request type: ", request.url)
+        logger.info(f"request type:  {request.scope['type']}")
         # Immediately return for OPTIONS requests
         if request.method == "OPTIONS":
             return await call_next(request)

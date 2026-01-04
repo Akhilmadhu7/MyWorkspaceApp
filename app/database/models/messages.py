@@ -18,7 +18,7 @@ class Message(Base):
 
     __tablename__ = "messages"
     message_id = Column(BigInteger, primary_key=True, autoincrement=True)
-    
+    tenant_id = Column(PG_UUID(as_uuid=True),ForeignKey("tenants.tenant_id", ondelete='CASCADE'), nullable=False, index=True)
     sender_id = Column(
         PG_UUID(as_uuid=True),
         ForeignKey("users.user_id", ondelete='SET NULL'),
@@ -39,3 +39,14 @@ class Message(Base):
         default=lambda: datetime.now(timezone.utc), 
         server_default=func.now()
     )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.message_id,
+            "sender_id": str(self.sender_id) if self.sender_id else None,
+            "receiver_id": str(self.receiver_id) if self.receiver_id else None,
+            "message": self.message,
+            "status": self.message_status,
+            "type": self.message_type,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }

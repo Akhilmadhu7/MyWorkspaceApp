@@ -5,13 +5,18 @@ from uuid import UUID
 from pydantic import ValidationError
 from typing import Optional
 from logger.logger import logger
+from enums import MessageStatusEnum, MessageTypeEnum
+from database.models import Message
+from repository import MessageRepository
 import json
 
 
 class ChatService:
 
-    def __init__(self, websocket_manager:WebSocketConnectionManager):
+    def __init__(self,message_repo:MessageRepository, websocket_manager:WebSocketConnectionManager):
+        self.message_repo = message_repo
         self.websocket_manager = websocket_manager
+
     
     async def send(self, websocket:WebSocket, user_id:UUID):
 
@@ -61,7 +66,17 @@ class ChatService:
                 
                 logger.info(f"Data from websocket: {data} and host: {websocket.client.host}")
                 target_user_id:UUID = validated_data.target_user_id
-                message:str = validated_data.message
+                #create the paylaod to insert into message table
+                message_payload:dict = {
+                    "sender_id":user_id,
+                    "receiver_id":target_user_id,
+                    "message":validated_data.message,
+                    "message_status":MessageStatusEnum.SENT,
+                    "message_type":validated_data.message_type,
+                    "tenant_id":websocket.scope['tenant_id']
+                }
+                message:Message = await self.message_repo.create(message_payload)
+                logger.info(f"Added message to database.")
                 await self.websocket_manager.publish_message(message, target_user_id, user_id)
                 
         except (WebSocketDisconnect, WebSocketException) as e:

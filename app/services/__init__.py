@@ -3,3 +3,4 @@ from .users import UserService
 from .auth import AuthenticationService
 from .user_invitations import UserInvitationService
 from .chats import ChatService
+from .chats import ChatService

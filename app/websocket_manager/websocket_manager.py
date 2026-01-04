@@ -75,19 +75,11 @@ class WebSocketConnectionManager:
                     await self.active_connections.get(user_id).send_json(content)
 
         
-    async def publish_message(self, message:str, reciever_id:UUID, sender_id:UUID):
+    async def publish_message(self, message:dict, reciever_id:UUID, sender_id:UUID):
         
         #get the connection.
         client_connection:WebSocket = self.active_connections.get(reciever_id)
         logger.info(f"client connnection is: {client_connection}.")
-
-        content:dict = {
-            "message":message,
-            "timestamp":datetime.now(timezone.utc).isoformat(),
-            "from_user_id":str(sender_id)
-        }
-
-        json_content = json.dumps(content)
 
         #If connection exists, then publish the message.
         if client_connection:
@@ -98,18 +90,18 @@ class WebSocketConnectionManager:
             logger.info(f"channel is: {channel}")
 
             #publish the message to the channel
-            await self.redis_client.publish(channel, json_content)
+            await self.redis_client.publish(channel, message)
             logger.info(f"Successfully published the message for the reciver_id: {reciever_id} send by user_id: {sender_id}.")
 
         #if client doesn't exist and has message history, then append the message to the history.
         elif self.message_history.get(reciever_id, None):
             logger.info(f"message history exists for the user_id: {reciever_id} and updating the user message history.")
-            self.message_history[reciever_id].update({sender_id:json_content})
+            self.message_history[reciever_id].update({sender_id:message})
 
         #if the client doesn't have any messsage, then create the message history.
         else:
             logger.info(f"Message history doesn't exist for the user_id: {reciever_id}. Adding the message to the user")
-            self.message_history[reciever_id] = {sender_id:json_content}
+            self.message_history[reciever_id] = {sender_id:message}
         
         
     async def broadcast_message(self, reciever_id:UUID):

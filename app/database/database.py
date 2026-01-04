@@ -54,7 +54,6 @@ class DatabaseConnectionManager:
         method takes db_url as the parameter and returns the async_session object.
         '''
         if db_url not in self.async_sessions_factory:
-            print(f"db url: {db_url} not in async session factory dict")
             engine = self.get_engine(db_url)
             async_session =  async_sessionmaker(bind=engine, expire_on_commit=False)
             self.async_sessions_factory[db_url] = async_session
@@ -101,7 +100,6 @@ db_manager:DatabaseConnectionManager = DatabaseConnectionManager()
 async def get_db():
     async_session = db_manager.get_default_async_session
     async with async_session() as session:
-        print("yielding session for the request.")
         try:
             yield session
         finally:
