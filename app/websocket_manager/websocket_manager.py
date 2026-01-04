@@ -34,17 +34,16 @@ class WebSocketConnectionManager:
         self.active_connections[user_id] = websocket
         logger.info(f"message history for the user_id: {user_id} and messages: {self.message_history.get(user_id)}")
 
-        #$ubscribe to the user channe.
-        asyncio.create_task(self.redis_listener(user_id))
-
-        #if the user has some pending messages to be delivered, then broadcast all the messages to the use channel.
+        #if the user has some pending messages to be delivered, then broadcast all the messages to the user.
         if user_id in self.message_history and self.message_history[user_id]:
             logger.info(f"user_id: {user_id} in message history.")
-            await asyncio.sleep(3)
             await self.broadcast_message(user_id)
         
- 
+        #$ubscribe to the user channe.
+        asyncio.create_task(self.subscribe_channel(user_id))
+    
     async def close(self, user_id:UUID):
+
         existing_connection = self.active_connections.get(user_id)
         if existing_connection:
             logger.info(f"Connection exists for the user_id: {user_id}. removing connection from the active connections.")
@@ -52,9 +51,11 @@ class WebSocketConnectionManager:
             channel:str = self.channel(user_id)
             logger.info(f"channel name to be deleted: {channel}")
             # self.redis_client.delete(channel)
+            async with self.redis_client.pubsub() as pubsub:
+                await pubsub.unsubscribe(self.channel(user_id))
             logger.info(f"Successfully deleted the channel: {channel}")
     
-    async def redis_listener(self, user_id:UUID):
+    async def subscribe_channel(self, user_id:UUID):
         
         #create the channel name
         channel:str = self.channel(user_id)
@@ -67,18 +68,14 @@ class WebSocketConnectionManager:
 
             #listening from the subscribed channel.
             async for message in pubsub.listen():
-                # logger.info(f"message: {message}")
-                # if message['type'] == 'subscribe':
-                #     logger.info(f"User: {user_id} subscribed succuessfully to the channel: {channel}")
                 if message['type'] == 'message':
                     logger.info(f"Message is: {message}")
-
                     #get the data and send the message.
                     content:dict = json.loads(message.get("data"))
                     await self.active_connections.get(user_id).send_json(content)
 
         
-    async def send_message(self, message:str, reciever_id:UUID, sender_id:UUID):
+    async def publish_message(self, message:str, reciever_id:UUID, sender_id:UUID):
         
         #get the connection.
         client_connection:WebSocket = self.active_connections.get(reciever_id)
@@ -90,6 +87,8 @@ class WebSocketConnectionManager:
             "from_user_id":str(sender_id)
         }
 
+        json_content = json.dumps(content)
+
         #If connection exists, then publish the message.
         if client_connection:
             logger.info(f"sending message to the user: {reciever_id} and message: {message}.")
@@ -99,27 +98,27 @@ class WebSocketConnectionManager:
             logger.info(f"channel is: {channel}")
 
             #publish the message to the channel
-            await self.redis_client.publish(channel, json.dumps(content))
+            await self.redis_client.publish(channel, json_content)
             logger.info(f"Successfully published the message for the reciver_id: {reciever_id} send by user_id: {sender_id}.")
 
         #if client doesn't exist and has message history, then append the message to the history.
         elif self.message_history.get(reciever_id, None):
             logger.info(f"message history exists for the user_id: {reciever_id} and updating the user message history.")
-            self.message_history[reciever_id].update({sender_id:message})
+            self.message_history[reciever_id].update({sender_id:json_content})
 
         #if the client doesn't have any messsage, then create the message history.
         else:
             logger.info(f"Message history doesn't exist for the user_id: {reciever_id}. Adding the message to the user")
-            self.message_history[reciever_id] = {sender_id:message}
+            self.message_history[reciever_id] = {sender_id:json_content}
         
         
     async def broadcast_message(self, reciever_id:UUID):
         reciever_history_messages:dict = self.message_history.get(reciever_id)
         reciever_connection:WebSocket = self.active_connections.get(reciever_id)
         logger.info(f"Broadcast messages receiver connection: {reciever_connection}")
-        for sender_id, message in reciever_history_messages.items():
-            logger.info(f"sending messages through broadcast: {message}")
-            await self.send_message(message, reciever_id, sender_id)
+        for sender_id, json_content in reciever_history_messages.items():
+            logger.info(f"sending messages through broadcast: {json_content}")
+            await reciever_connection.send_json(json.loads(json_content))       
 
 websocket_manager:Optional[WebSocketConnectionManager] = None
 

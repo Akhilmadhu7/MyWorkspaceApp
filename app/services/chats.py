@@ -30,7 +30,7 @@ class ChatService:
                 logger.info(f"type of data before checking. {type(data)}.")
                 if data is None:
                     logger.error(f"No data from the request.")
-                    await self.websocket_manager.send_message("no data", user_id)
+                    await self.websocket_manager.publish_message("no data", user_id)
                     continue
 
                 if isinstance(data, str):
@@ -38,13 +38,13 @@ class ChatService:
                         data = json.loads(data)
                     except json.JSONDecodeError:
                         logger.info(f"Invalid JSON: {data}")
-                        await self.websocket_manager.send_message("Invalid JSON format", user_id)
+                        await self.websocket_manager.publish_message("Invalid JSON format", user_id)
                         continue
 
                 logger.info(f"After laoding teh daa and it's type is : {type(data)}")
                 if not isinstance(data, dict):
                     logger.info(f"Type of data is not valid dict, type: {type(data)}.")
-                    await self.websocket_manager.send_message(f"Invalid type of data : {type(data)}.", user_id)
+                    await self.websocket_manager.publish_message(f"Invalid type of data : {type(data)}.", user_id)
                     continue
                 
                 try:
@@ -52,17 +52,17 @@ class ChatService:
                     logger.info(f"Validated data {validated_data}")
                 except ValidationError as e:
                     logger.info(f"Validation error from pydantic validation. Error: {e}")
-                    await self.websocket_manager.send_message(str(e), user_id)
+                    await self.websocket_manager.publish_message(str(e), user_id)
                     continue
                 except Exception as e:
                     logger.error(f"Error occurred while validating data. Error: {e}.")
-                    await self.websocket_manager.send_message(str(e), user_id)
+                    await self.websocket_manager.publish_message(str(e), user_id)
                     continue
                 
                 logger.info(f"Data from websocket: {data} and host: {websocket.client.host}")
                 target_user_id:UUID = validated_data.target_user_id
                 message:str = validated_data.message
-                await self.websocket_manager.send_message(message, target_user_id, user_id)
+                await self.websocket_manager.publish_message(message, target_user_id, user_id)
                 
         except (WebSocketDisconnect, WebSocketException) as e:
             logger.error(f"error from websocket: {e} and user_id:{user_id} and websocket: {websocket}")
