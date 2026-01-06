@@ -9,4 +9,4 @@ from .user_invitations import (
     UserCreateAndVerifyInvitationSchema
 )
 from .roles import RoleResponseSchema
-from .chat_schema import OneToOneChatSchema
+from .chat_schema import OneToOneChatSchema, ChatAcknowldgementSchema

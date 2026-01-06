@@ -1,6 +1,6 @@
-from fastapi import WebSocket, WebSocketDisconnect, WebSocketException,status, HTTPException
+from fastapi import WebSocket, WebSocketDisconnect, WebSocketException,status, HTTPException, Request
 from websocket_manager import WebSocketConnectionManager
-from api.v1.schemas import OneToOneChatSchema
+from api.v1.schemas import OneToOneChatSchema, ChatAcknowldgementSchema
 from uuid import UUID
 from pydantic import ValidationError
 from typing import Optional, List
@@ -35,7 +35,7 @@ class ChatService:
             )
             message_ids:List[int] = await self.websocket_manager.broadcast_non_delivered_messages(user_id, non_delivered_messages)
             logger.info(f"Message ids needs to be updated are: {message_ids}")
-            await self.message_repo.bulk_update_status(message_ids, MessageStatusEnum.DELIVERED)
+            await self.message_repo.bulk_update_status(websocket.scope['tenant_id'], message_ids, MessageStatusEnum.DELIVERED)
             logger.info(f"Successfully updated message status to delivered.")
         
         try:
@@ -92,11 +92,24 @@ class ChatService:
                     "message_type":validated_data.message_type,
                     "tenant_id":websocket.scope['tenant_id']
                 }
-                message:Message = await self.message_repo.create(message_payload)
-                logger.info(f"Added message to database.")
+                message = await self.message_repo.create(message_payload)
+                logger.info(f"Added message to database. {type(message)} and message is: {message}")
                 await self.websocket_manager.publish_message(message, target_user_id, user_id)
                 
         except (WebSocketDisconnect, WebSocketException) as e:
             logger.error(f"error from websocket: {e} and user_id:{user_id} and websocket: {websocket}")
             await self.websocket_manager.close(user_id)
+    
+    async def update_message_status(self, request:Request, payload:ChatAcknowldgementSchema) ->bool:
+        
+        tenant_id = request.headers.get("X-Tenant-Id", None)
+        payload:dict = payload.model_dump()
+        message_ids:List[int] = [message_id for message_id in payload.get("message_ids")]
+        logger.info(f"Message ids need to be updated are: {message_ids}")
+        await self.message_repo.bulk_update_status(tenant_id,message_ids, payload.get("message_status"))
+        return True
+
+        
+
+    
     
