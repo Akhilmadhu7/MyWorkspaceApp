@@ -14,7 +14,8 @@ class WebSocketConnectionManager:
     def __init__(self, redis_client:AsyncRedisManager):
         self.redis_client = redis_client
         self.local_active_connections:dict[UUID, WebSocket] = {}
-        self.channel = lambda user_id : f"user_id: {user_id}"\
+        self.channel = lambda user_id : f"user_id:{user_id}"
+        self.online_connections:List[UUID] = []
 
     async def connect(self, websocket:WebSocket, user_id:UUID):
         
@@ -65,7 +66,7 @@ class WebSocketConnectionManager:
                 if message['type'] == 'message':
                     logger.info(f"Message is: {message}")
                     user_id_channel:str = message.get("channel")
-                    logger.info(f"user id channel: {user_id_channel}")
+                    logger.info(f"user id channel: {user_id_channel} and subscribed channel: {channel}")
                     receiver_user_id:UUID = UUID(user_id_channel.split("user_id: ")[1])
                     logger.info(f"receiver user id in subscribe: {receiver_user_id}")
                     receiver_websocket:WebSocket = self.local_active_connections.get(receiver_user_id)
@@ -73,7 +74,7 @@ class WebSocketConnectionManager:
                     if receiver_websocket:
                         #get the data and send the message.
                         content:dict = json.loads(message.get("data"))
-                        await self.local_active_connections.get(user_id).send_json(content)
+                        await self.local_active_connections.get(receiver_user_id).send_json(content)
  
     async def publish_message(self, message:dict, reciever_id:UUID, sender_id:UUID):
         
@@ -103,13 +104,6 @@ class WebSocketConnectionManager:
             message_ids.append(message.get("message_id"))
         return message_ids
         
-    # async def broadcast_message(self, reciever_id:UUID):
-    #     reciever_history_messages:dict = self.message_history.get(reciever_id)
-    #     reciever_connection:WebSocket = self.local_active_connections.get(reciever_id)
-    #     logger.info(f"Broadcast messages receiver connection: {reciever_connection}")
-    #     for sender_id, json_content in reciever_history_messages.items():
-    #         logger.info(f"sending messages through broadcast: {json_content}")
-    #         await reciever_connection.send_json(json.loads(json_content))       
 
 websocket_manager:Optional[WebSocketConnectionManager] = None
 
