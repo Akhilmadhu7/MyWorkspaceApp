@@ -6,6 +6,8 @@ services:
         - "8100:8100"
     volumes:
         - ./haproxy:/usr/local/etc/haproxy
+    networks:
+      - shared-network
   api:
     build:
       context: .
@@ -19,12 +21,13 @@ services:
       - LOG_LEVEL=DEBUG
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
+      - HOSTNAME=api_service-1
     depends_on:
       db:
         condition: service_healthy
     networks:
       - shared-network
-  api-one:
+  api-2:
     build:
       context: .
       dockerfile: Dockerfile
@@ -37,12 +40,13 @@ services:
       - LOG_LEVEL=DEBUG
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
+      - HOSTNAME=api_service-2
     depends_on:
       db:
         condition: service_healthy
     networks:
       - shared-network
-  api-two:
+  api-3:
     build:
       context: .
       dockerfile: Dockerfile
@@ -55,11 +59,14 @@ services:
       - LOG_LEVEL=DEBUG
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
+      - HOSTNAME=api_service-3
     depends_on:
       db:
         condition: service_healthy
     networks:
       - shared-network
+    
+    
     
 
   db:

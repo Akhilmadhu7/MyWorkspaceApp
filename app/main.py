@@ -15,6 +15,7 @@ from clients import create_api_client, close_api_client
 from websocket_manager import create_websocket_manager, delete_websocket_manager
 from typing import Any
 import sys
+from websocket_manager import WebSocketConnectionManager
 
 @contextlib.asynccontextmanager
 async def life_span(app:FastAPI):
@@ -28,7 +29,8 @@ async def life_span(app:FastAPI):
     await redis_cache_manager_instance.connect()
     logger.info("Successfully connected to redis.")
     create_api_client()
-    await create_websocket_manager()
+    websocket:WebSocketConnectionManager = await create_websocket_manager()
+    await websocket.start_listener()
     yield
     logger.info("Applicatin shut down started.")
     await db_manager.clean_up_engines()

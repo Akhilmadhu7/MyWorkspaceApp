@@ -90,7 +90,7 @@ class ChatService:
                 }
                 message = await self.message_repo.create(message_payload)
                 logger.info(f"Added message to database. {type(message)} and message is: {message}")
-                await self.websocket_manager.publish_message(message, target_user_id, user_id)
+                await self.websocket_manager.publish_message(message, target_user_id)
                 
         except (WebSocketDisconnect, WebSocketException) as e:
             logger.error(f"error from websocket: {e} and user_id:{user_id} and websocket: {websocket}")

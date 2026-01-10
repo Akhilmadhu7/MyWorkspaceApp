@@ -4,11 +4,15 @@ from typing  import Optional, List, Dict
 from logger.logger import logger
 from cache import AsyncRedisManager, get_redis
 from datetime import datetime, timezone
+from config.config import config
 import json
 import asyncio
 import uuid
 
 class WebSocketConnectionManager:
+
+    ONLINE_KEY = "online_users"
+    USER_KEY = lambda uuid: f"user:{uuid}"
     
 
     def __init__(self, redis_client:AsyncRedisManager):
@@ -16,6 +20,16 @@ class WebSocketConnectionManager:
         self.local_active_connections:dict[UUID, WebSocket] = {}
         self.channel = lambda user_id : f"user_id:{user_id}"
         self.online_connections:List[UUID] = []
+        self.server_channel = config.redis_channel_name
+        self.listener_task:Optional[asyncio.Task] = None
+        self.server_name = config.server_name
+
+    async def start_listener(self):
+        if self.listener_task and not self.listener_task.done():
+            logger.error(f"Listener exists for the server: {self.server_name} and channel: {self.server_channel}")
+            return
+        self.listener_task = asyncio.create_task(self.__server_listener())
+        logger.info(f"Listener started for the channel: {self.server_channel}")
 
     async def connect(self, websocket:WebSocket, user_id:UUID):
         
@@ -24,8 +38,8 @@ class WebSocketConnectionManager:
         if existing_connection:
             logger.error(f"An existing connection for the user_id: {user_id} exists.")
             self.local_active_connections.pop(user_id)
-        
-            raise WebSocketException(code=status.HTTP_400_BAD_REQUEST, reason="An existing connection.")
+            logger.info(f"Replacint the websocker for the user_id: {user_id}")
+            # raise WebSocketException(code=status.HTTP_400_BAD_REQUEST, reason="An existing connection.")
         
         #if not, then accept the connection and add the connection to the memory.
         logger.info(f"Connection doesn't exist and creating a new one for the user: {user_id}")
@@ -33,9 +47,17 @@ class WebSocketConnectionManager:
         logger.info(f"Successfully accepted connection for the user_id: {user_id}")
 
         self.local_active_connections[user_id] = websocket
-        
-        #$ubscribe to the user channe.
-        asyncio.create_task(self.subscribe_channel(user_id))
+        user_data:dict = {
+            "server_name":self.server_name,
+            "server_channel_name":self.server_channel,
+            "connected_at":datetime.now(timezone.utc).isoformat()
+        }
+        #set the user data in redis
+        await self.redis_client.setex(
+            f"user_id:{user_id}",
+            7200,
+            json.dumps(user_data)
+        )
     
     async def close(self, user_id:UUID):
 
@@ -43,58 +65,50 @@ class WebSocketConnectionManager:
         if existing_connection:
             logger.info(f"Connection exists for the user_id: {user_id}. removing connection from the active connections.")
             self.local_active_connections.pop(user_id)
-            channel:str = self.channel(user_id)
-            logger.info(f"channel name to be deleted: {channel}")
-            # self.redis_client.delete(channel)
+        await self.redis_client.delete(f"user_id:{user_id}")
+
+    async def __server_listener(self):
+        try:
             async with self.redis_client.pubsub() as pubsub:
-                await pubsub.unsubscribe(self.channel(user_id))
-            logger.info(f"Successfully deleted the channel: {channel}")
-    
-    async def subscribe_channel(self, user_id:UUID):
-        
-        #create the channel name
-        channel:str = self.channel(user_id)
-        logger.info(f"Channel to be listening: {channel}")
-    
-        async with self.redis_client.pubsub() as pubsub:
-            #subscribed to the channel
-            await pubsub.subscribe(channel)
-            logger.info(f"Subscribed to the channel: {channel}")
+                await pubsub.subscribe(self.server_channel)
+                logger.info(f"Successfully subscribed to the server: {self.server_channel}")
 
-            #listening from the subscribed channel.
-            async for message in pubsub.listen():
-                if message['type'] == 'message':
-                    logger.info(f"Message is: {message}")
-                    user_id_channel:str = message.get("channel")
-                    logger.info(f"user id channel: {user_id_channel} and subscribed channel: {channel}")
-                    receiver_user_id:UUID = UUID(user_id_channel.split("user_id: ")[1])
-                    logger.info(f"receiver user id in subscribe: {receiver_user_id}")
-                    receiver_websocket:WebSocket = self.local_active_connections.get(receiver_user_id)
-                    logger.info(f"websocket for the receiver user id: {receiver_websocket}")
-                    if receiver_websocket:
-                        #get the data and send the message.
-                        content:dict = json.loads(message.get("data"))
-                        await self.local_active_connections.get(receiver_user_id).send_json(content)
- 
-    async def publish_message(self, message:dict, reciever_id:UUID, sender_id:UUID):
-        
-        #get the connection.
-        client_connection:WebSocket = self.local_active_connections.get(reciever_id)
-        logger.info(f"client connnection is: {client_connection}.")
+                async for message in pubsub.listen():
+                    if message['type'] == 'message':
+                        logger.info(f"Message: {message}")
+                        payload:dict = json.loads(message['data'])
+                        logger.info(f"payload decoded: {payload}")
+                        receiver_user_id:UUID = UUID(payload.get('receiver_id'))
 
-        #If connection exists, then publish the message.
-        if client_connection:
-            logger.info(f"sending message to the user: {reciever_id} and message: {message}.")
+                        receiver_websocket:WebSocket = self.local_active_connections.get(receiver_user_id, None)
+                        if receiver_websocket:
+                            logger.info(f"Receiver websocker connection exists: {receiver_websocket}")
+                            await receiver_websocket.send_json(payload)
+                            logger.info(f"Message delivered to the receiver: {receiver_user_id}")
+                        else:
+                            logger.error(f"Connection doesn't exist for the receiver_id: {receiver_user_id}")
+        except Exception as error:
+            logger.error(f"Error from server listener: {error}")
+        
+    async def publish_message(self, message:dict, reciever_id:UUID):
+        
+        #get user info from redis.
+        receiver_data = await self.redis_client.get(f"user_id:{reciever_id}")
+
+        #if  user info, then  publish the message to the user server channle.
+        if receiver_data:
+            logger.info(f"receiver: {reciever_id} is online.")
+
+            receiver_info:dict = json.loads(receiver_data)
+            #get the user server channel
+            receiver_server_channel_name:str = receiver_info.get("server_channel_name")
             
-            #create the channel name
-            channel:str = self.channel(reciever_id)
-            logger.info(f"channel is: {channel}")
+            #publish message.
+            await self.redis_client.publish(receiver_server_channel_name, json.dumps(message))
+        else:
+            logger.info(f"receiver: {reciever_id} is offline.")
+        
 
-            #publish the message to the channel
-            await self.redis_client.publish(channel, json.dumps(message))
-            logger.info(f"Successfully published the message for the reciver_id: {reciever_id} send by user_id: {sender_id}.")
-
-    
     async def broadcast_non_delivered_messages(self, receiver_id:UUID, messsages:List[dict]) -> List[int]:
         receiver_connection:WebSocket = self.local_active_connections.get(receiver_id)
         message_ids:List[int] = []
@@ -112,6 +126,7 @@ async def create_websocket_manager():
     global websocket_manager
     websocket_manager = WebSocketConnectionManager(redis_client=redis_client)
     logger.info(f"Successfully created websocket: {websocket_manager}")
+    return websocket_manager
 
 def delete_websocket_manager():
     global websocket_manager

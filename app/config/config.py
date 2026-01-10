@@ -1,10 +1,13 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from typing import Optional
+import os
+import uuid
 
 class Config(BaseSettings):
 
     app_name: str = Field(default="FastApi App")
+    server_name:str = os.getenv("HOSTNAME",f"{uuid.uuid4().hex[:8]}" )
     environment:str = Field(default='dev')
     read_time_out:int = Field(default=60)
     write_time_out:int = Field(default=30)
@@ -49,6 +52,10 @@ class Config(BaseSettings):
     @property
     def database_url(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+    
+    @property
+    def redis_channel_name(self) -> str:
+        return f"server-{self.server_name}"
     
     @property
     def celery_backend_url(self):
