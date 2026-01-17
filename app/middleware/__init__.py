@@ -1,2 +1,3 @@
 from .tenant_verification_middleware import TenantVerificationMiddleware
 from .jwt_verification_middleware import JwtVerificationMiddleware
+from .rate_limiter_middleware import RateLimiterMiddleware

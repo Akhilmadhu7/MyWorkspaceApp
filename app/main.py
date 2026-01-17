@@ -16,6 +16,7 @@ from websocket_manager import create_websocket_manager, delete_websocket_manager
 from typing import Any
 import sys
 from websocket_manager import WebSocketConnectionManager
+from rate_limiter import get_rate_limiter, RateLimiter
 
 @contextlib.asynccontextmanager
 async def life_span(app:FastAPI):
@@ -31,6 +32,8 @@ async def life_span(app:FastAPI):
     create_api_client()
     websocket:WebSocketConnectionManager = await create_websocket_manager()
     await websocket.start_listener()
+    rate_limiter:RateLimiter = await get_rate_limiter()
+    app.state.rate_limiter = rate_limiter
     yield
     logger.info("Applicatin shut down started.")
     await db_manager.clean_up_engines()
@@ -54,6 +57,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
 app.add_middleware(JwtVerificationMiddleware)
 # app.add_middleware(TenantVerificationMiddleware)
 

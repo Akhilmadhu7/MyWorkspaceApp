@@ -19,7 +19,6 @@ class WebSocketConnectionManager:
         self.redis_client = redis_client
         self.local_active_connections:dict[UUID, WebSocket] = {}
         self.channel = lambda user_id : f"user_id:{user_id}"
-        self.online_connections:List[UUID] = []
         self.server_channel = config.redis_channel_name
         self.listener_task:Optional[asyncio.Task] = None
         self.server_name = config.server_name

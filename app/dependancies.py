@@ -17,6 +17,8 @@ from fastapi import Depends
 from websocket_manager import get_websocket_manager, WebSocketConnectionManager
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.database import get_db
+from rate_limiter import RateLimiter
+from cache import redis_cache_manager_instance
 
 def get_user_repo(db:AsyncSession = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
@@ -63,3 +65,6 @@ def get_chat_service(
         websocket_manager:WebSocketConnectionManager = Depends(get_websocket_manager)
     ) -> ChatService:
     return ChatService(message_repo, websocket_manager)
+
+def get_rate_limiter() -> RateLimiter:
+    return RateLimiter(redis_cache_manager_instance)

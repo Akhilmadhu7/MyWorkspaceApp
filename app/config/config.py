@@ -49,6 +49,9 @@ class Config(BaseSettings):
     EMAIL_USERNAME:str
     EMAIL_PASSWORD:str
 
+    rate_limiter_capacity:int = 5
+    rate_limiter_refill_rate:int = 10
+
     @property
     def database_url(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"

@@ -43,6 +43,8 @@ class AuthenticationService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
+        import asyncio
+        await asyncio.sleep(10)
         
         jwt_payload:dict = {
             "user_id":str(user.user_id),
