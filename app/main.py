@@ -6,7 +6,7 @@ from api import router, chat_routers
 from config.config import config
 import contextlib
 from cache.cache import redis_cache_manager_instance
-from middleware import TenantVerificationMiddleware, JwtVerificationMiddleware
+from middleware import TenantVerificationMiddleware, JwtVerificationMiddleware, RateLimiterMiddleware
 from logger import logger
 from alembic import command
 from alembic.config import Config
@@ -58,7 +58,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+app.add_middleware(RateLimiterMiddleware)
 app.add_middleware(JwtVerificationMiddleware)
 # app.add_middleware(TenantVerificationMiddleware)
 

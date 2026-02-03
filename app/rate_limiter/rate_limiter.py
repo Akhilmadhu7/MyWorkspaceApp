@@ -42,10 +42,10 @@ class RateLimiter:
         
         token_key:str = self.TOKEN_KEY_PREFIX+client_id
         last_refill_key:str = self.LAST_PREFILL_KEY_PREFIX+client_id
-
+        
         now:int = int(datetime.now(timezone.utc).timestamp()*1000)
         
-        last_refill:str = await self.redis_client.get(last_refill_key)
+        last_refill:str|None = await self.redis_client.get(last_refill_key)
         if last_refill is None:
             logger.info(f"Last refil is None. So setting up the capacity in redis with capacity: {config.rate_limiter_capacity}")
             await self.redis_client.set(
@@ -58,21 +58,21 @@ class RateLimiter:
             )
             return None
         
-        logger.info(f"Rate limiter token last refilled: {last_refill}")
         last_refill_time:int = int(last_refill)
         elapsed_time:int = now - last_refill_time
+        logger.info(f"Rate limiter token last refilled: {last_refill_time}")
         logger.info(f"Rate liimter token elapsed time: {elapsed_time}")
 
-        if elapsed_time <= 0:
+        if elapsed_time <= 1:
             logger.info(f"Rate limiter refill returning None as elapsed time is: {elapsed_time}.")
             return None
         
-        tokens_to_add:int = int((elapsed_time*config.rate_limiter_refill_rate)/1000)
+        tokens_to_add:int = int((elapsed_time*config.rate_limiter_refill_rate))
         if tokens_to_add <= 0:
             logger.info(f"Rate limiter refill returns None as tokens to add: {tokens_to_add}.")
             return None
         
-        current_tokens:int = int(await self.redis_client.get(token_key))
+        current_tokens:int = int(await self.redis_client.get(token_key) or "0")
         new_tokens:int = min(config.rate_limiter_capacity, current_tokens+tokens_to_add)
         logger.info(f"Rate limiter tokens to add: {tokens_to_add} current token: {current_tokens} and new token: {new_tokens} for the client: {client_id}")
         await self.redis_client.set(token_key, str(new_tokens))
