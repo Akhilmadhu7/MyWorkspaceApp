@@ -31,3 +31,11 @@ async def get_access_token(request:Request, payload:RefreshToken, auth_service:A
         message="Successfully fetched access and refresh token.",
         status=status.HTTP_200_OK
     )
+
+@router.post(
+    "/logout",
+    description="API to logout user.",
+    response_model=BaseResponse
+)
+async def logout_user(request:Request, auth_service:AuthenticationService=Depends(get_auth_service)):
+    data:None = await auth_service

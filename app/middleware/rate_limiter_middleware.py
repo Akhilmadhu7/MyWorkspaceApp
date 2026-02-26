@@ -21,7 +21,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request:Request, call_next):
         
         # Exclude `/docs` and `/redoc` endpoints
-        if request.url.path.endswith(("/docs", "/redoc", "/openapi.json")):
+        if request.url.path.endswith(("/docs", "/redoc","health", "/openapi.json")):
             return await call_next(request)
         
         rate_limiter:RateLimiter = request.app.state.rate_limiter
@@ -43,7 +43,6 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
                 )
             response = await call_next(request)
             return response
-        
         except Exception as error:
             logger.error(f"Error occurred: {error}")
             return JSONResponse(
@@ -52,3 +51,6 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
                     "detail":str(error)
                 }
             )
+        
+        
+        

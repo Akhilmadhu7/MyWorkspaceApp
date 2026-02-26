@@ -16,6 +16,7 @@ router = APIRouter(prefix="/users")
 async def get_user_api(request:Request, user_id:UUID, user_service:UserService = Depends(get_user_service)):
 
     user:UserResponseSchema = await user_service.get_user(request, user_id)
+    print("aftet useriddddddd8888____________________")
     return BaseResponse(
         data = user,
         message = 'Successfully fetched user details.',

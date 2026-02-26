@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Valentine's Day Sneha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ffc3d7 50%, #ff6b9d 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-in;
+        }
+
+        .question-box {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            animation: slideUp 1s ease-out;
+        }
+
+        .question {
+            font-size: 1.8em;
+            color: #ff1744;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+
+        .buttons-container {
+            position: relative;
+            height: 150px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 140px;
+            height: 55px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #yesBtn {
+            background: linear-gradient(135deg, #ff1744, #ff6b9d);
+            color: white;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        #yesBtn:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 5px 20px rgba(255, 23, 68, 0.4);
+        }
+
+        #noBtn {
+            background: #f5f5f5;
+            color: #666;
+            position: absolute;
+            z-index: 5;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            margin: 20px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            animation: scaleIn 0.3s ease-out;
+        }
+
+        .modal-content h2 {
+            color: #ff1744;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .quote {
+            font-size: 1.3em;
+            color: #333;
+            line-height: 1.6;
+            font-style: italic;
+            margin: 20px 0;
+        }
+
+        .heart {
+            color: #ff1744;
+            font-size: 3em;
+            animation: heartbeat 1.5s infinite;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes heartbeat {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+            .question {
+                font-size: 1.4em;
+            }
+            button {
+                padding: 12px 30px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Happy Valentine's Day Sneha</h1>
+    
+    <div class="question-box">
+        <div class="question">Do you marry me dear?</div>
+        <div class="buttons-container">
+            <button id="yesBtn">Yes! 💕</button>
+            <button id="noBtn">No</button>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="heart">❤️</div>
+            <h2>Yay! You said Yes!</h2>
+            <div class="quote">
+                "In all the world, there is no heart for me like yours. 
+                In all the world, there is no love for you like mine." 
+                <br>- Maya Angelou
+            </div>
+            <div class="quote">
+                "You are my today and all of my tomorrows. 
+                Forever isn't long enough with you."
+            </div>
+            <div class="heart">💑</div>
+        </div>
+    </div>
+
+    <script>
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const modal = document.getElementById('modal');
+        const container = document.querySelector('.buttons-container');
+
+        // Handle Yes button click
+        yesBtn.addEventListener('click', () => {
+            modal.style.display = 'flex';
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Track mouse position and move button away when cursor gets close
+        let isMoving = false;
+        
+        container.addEventListener('mousemove', (e) => {
+            if (isMoving) return;
+            
+            const noBtnRect = noBtn.getBoundingClientRect();
+            const cursorX = e.clientX;
+            const cursorY = e.clientY;
+            
+            // Calculate distance from cursor to button center
+            const btnCenterX = noBtnRect.left + noBtnRect.width / 2;
+            const btnCenterY = noBtnRect.top + noBtnRect.height / 2;
+            
+            const distance = Math.sqrt(
+                Math.pow(cursorX - btnCenterX, 2) + 
+                Math.pow(cursorY - btnCenterY, 2)
+            );
+            
+            // If cursor is within 150px of button, move it away
+            if (distance < 150) {
+                isMoving = true;
+                moveNoButton(cursorX, cursorY);
+                setTimeout(() => {
+                    isMoving = false;
+                }, 100);
+            }
+        });
+
+        noBtn.addEventListener('mouseenter', (e) => {
+            moveNoButton(e.clientX, e.clientY);
+        });
+
+        noBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            moveNoButton(e.clientX, e.clientY);
+        });
+
+        noBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveNoButton();
+        });
+
+        function moveNoButton(cursorX, cursorY) {
+            const containerRect = container.getBoundingClientRect();
+            const btnWidth = 140;
+            const btnHeight = 55;
+            
+            // Calculate the Yes button's position (center of container)
+            const yesBtnCenterX = containerRect.width / 2;
+            const yesBtnCenterY = containerRect.height / 2;
+            const yesBtnRadius = 100; // Safe distance from Yes button
+            
+            let randomX, randomY;
+            let attempts = 0;
+            const maxAttempts = 100;
+            
+            // Keep trying until we find a position that doesn't overlap Yes button
+            // and is far from cursor
+            do {
+                randomX = Math.random() * (containerRect.width - btnWidth);
+                randomY = Math.random() * (containerRect.height - btnHeight);
+                
+                // Calculate center of No button at this position
+                const noBtnCenterX = randomX + btnWidth / 2;
+                const noBtnCenterY = randomY + btnHeight / 2;
+                
+                // Calculate distance from Yes button
+                const distanceFromYes = Math.sqrt(
+                    Math.pow(noBtnCenterX - yesBtnCenterX, 2) + 
+                    Math.pow(noBtnCenterY - yesBtnCenterY, 2)
+                );
+                
+                // Calculate distance from cursor if cursor position is provided
+                let distanceFromCursor = Infinity;
+                if (cursorX !== undefined && cursorY !== undefined) {
+                    const absoluteNoBtnX = containerRect.left + noBtnCenterX;
+                    const absoluteNoBtnY = containerRect.top + noBtnCenterY;
+                    distanceFromCursor = Math.sqrt(
+                        Math.pow(cursorX - absoluteNoBtnX, 2) + 
+                        Math.pow(cursorY - absoluteNoBtnY, 2)
+                    );
+                }
+                
+                // Position is valid if it's far from Yes button and far from cursor
+                if (distanceFromYes > yesBtnRadius && distanceFromCursor > 200) {
+                    break;
+                }
+                
+                attempts++;
+            } while (attempts < maxAttempts);
+            
+            // Apply new position
+            noBtn.style.left = randomX + 'px';
+            noBtn.style.top = randomY + 'px';
+        }
+
+        // Initial position for No button
+        function initializeNoButton() {
+            const containerRect = container.getBoundingClientRect();
+            const btnWidth = 140;
+            const btnHeight = 55;
+            
+            // Place it to the right of center, but not overlapping
+            const startX = containerRect.width / 2 + 100;
+            const startY = (containerRect.height - btnHeight) / 2;
+            
+            noBtn.style.left = startX + 'px';
+            noBtn.style.top = startY + 'px';
+        }
+
+        // Initialize on load
+        window.addEventListener('load', initializeNoButton);
+    </script>
+</body>
+</html>

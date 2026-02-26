@@ -13,13 +13,14 @@ class UserService:
     def __init__(self, user_repo:UserRepository):
         self.user_repo = user_repo
 
-    async def get_user(self, request:Request, user_id:UUID) -> UserResponseSchema:
+    async def get_user(self, request:Request, user_id:UUID) -> Optional[UserResponseSchema]:
         
         tenant_id = request.headers.get("X-Tenant-Id", None)
         user:Optional[User] = await self.user_repo.get_user(tenant_id, user_id)
-        if not user:
+        if user is None:
             logger.error(f"User not found for the user: {user_id} and tenant_id: {tenant_id}.")
-            NotFoundException("User not found.") 
+            raise NotFoundException("User not found.")
+        print("user exists here: ", user)
         return UserResponseSchema.from_orm(user)
     
     async def get_all_users(self, request:Request, user_filters:dict={}) -> List[UserResponseSchema]:
@@ -34,7 +35,7 @@ class UserService:
         user:Optional[User] = await self.user_repo.get_user(tenant_id, user_id)
         if not user:
             logger.error(f"User not found for the user: {user_id} and tenant_id: {tenant_id}.")
-            NotFoundException("User not found.")
+            raise NotFoundException("User not found.")
         
         user_payload:dict = payload.model_dump(exclude_none=True)
         if user_payload.get("email",None):
@@ -61,7 +62,7 @@ class UserService:
         user:Optional[User] = await self.user_repo.get_user(tenant_id, user_id)
         if not user:
             logger.error(f"User not found for the user: {user_id} and tenant_id: {tenant_id}.")
-            NotFoundException("User not found.")
+            raise NotFoundException("User not found.")
         
         try:
             await self.user_repo.update_user(user, tenant_id, {"is_deleted":True})
